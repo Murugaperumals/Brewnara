@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}{{ user.full_name }} (@{{ user.username }}) - Brewnara{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Profile Header -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3 text-center">
+                    <div class="position-relative d-inline-block">
+                        <img src="{{ url_for('static', filename='uploads/avatars/' + user.profile_image) if user.profile_image and user.profile_image not in ['default-avatar.png', 'default-avatar.svg'] else url_for('static', filename='images/default-avatar.svg') }}" 
+                             alt="{{ user.full_name }}" class="rounded-circle profile-avatar mb-3" onerror="this.src='{{ url_for('static', filename='images/default-avatar.svg') }}'">
+                        {% if user != current_user %}
+                            {% set icon_class, icon_color, status_text = user.get_status_icon() %}
+                            <span class="position-absolute status-indicator {{ status_text }}" 
+                                  style="background: {{ icon_color }}; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid white; font-size: 10px; bottom: 15px; right: 15px;"
+                                  title="{{ status_text.title() }}">
+                                <i class="{{ icon_class }}" style="font-size: 10px;"></i>
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-9">
+                    <div class="profile-info">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <div>
+                                <h2 class="mb-0">{{ user.full_name }}</h2>
+                                <p class="text-muted mb-0">@{{ user.username }}</p>
+                            </div>
+                            <div>
+                                {% if user == current_user %}
+                                    <a href="{{ url_for('users.edit_profile') }}" class="btn btn-outline-primary">
+                                        <i class="fas fa-edit me-2"></i>Edit Profile
+                                    </a>
+                                {% else %}
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-primary follow-btn" data-username="{{ user.username }}">
+                                            {% if current_user.is_following(user) %}
+                                                <i class="fas fa-check me-2"></i>Following
+                                            {% else %}
+                                                <i class="fas fa-plus me-2"></i>Follow
+                                            {% endif %}
+                                        </button>
+                                        <a href="{{ url_for('messages.conversation', user_id=user.id) }}" class="btn btn-outline-primary">
+                                            <i class="fas fa-envelope me-2"></i>Message
+                                        </a>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Profile Stats -->
+                        <div class="row text-center mb-3">
+                            <div class="col-4">
+                                <h5 class="mb-0">{{ user.posts_count }}</h5>
+                                <small class="text-muted">Posts</small>
+                            </div>
+                            <div class="col-4">
+                                <h5 class="mb-0 followers-count">{{ user.followers_count }}</h5>
+                                <small class="text-muted">Followers</small>
+                            </div>
+                            <div class="col-4">
+                                <h5 class="mb-0">{{ user.following_count }}</h5>
+                                <small class="text-muted">Following</small>
+                            </div>
+                        </div>
+                        
+                        <!-- Bio and Details -->
+                        {% if user.bio %}
+                        <p class="mb-2">{{ user.bio }}</p>
+                        {% endif %}
+                        
+                        <div class="profile-details">
+                            {% if user.location %}
+                            <p class="mb-1 text-muted">
+                                <i class="fas fa-map-marker-alt me-2"></i>{{ user.location }}
+                            </p>
+                            {% endif %}
+                            {% if user.favorite_brew %}
+                            <p class="mb-1 text-muted">
+                                <i class="fas fa-coffee me-2"></i>Favorite: {{ user.favorite_brew }}
+                            </p>
+                            {% endif %}
+                            <p class="mb-0 text-muted">
+                                <i class="fas fa-calendar me-2"></i>Joined {{ user.join_date.strftime('%B %Y') }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Posts Grid -->
+    <div class="row">
+        {% if posts.items %}
+            {% for post in posts.items %}
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card post-card h-100">
+                    {% if post.image_url %}
+                    <div class="post-image-container">
+                        <img src="{{ url_for('static', filename='uploads/posts/' + post.image_url) }}" 
+                             alt="Post Image" class="card-img-top post-thumbnail">
+                    </div>
+                    {% endif %}
+                    
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <small class="text-muted">{{ format_timestamp(post.timestamp) }}</small>
+                            {% if post.location %}
+                            <small class="text-muted">
+                                <i class="fas fa-map-marker-alt"></i> {{ post.location }}
+                            </small>
+                            {% endif %}
+                        </div>
+                        
+                        <p class="card-text">{{ post.content[:100] }}{% if post.content|length > 100 %}...{% endif %}</p>
+                        
+                        <!-- Post Meta -->
+                        {% if post.mood or post.brew_type %}
+                        <div class="mb-2">
+                            {% if post.mood %}
+                                <span class="badge bg-light text-dark me-1">
+                                    <i class="fas fa-smile me-1"></i>{{ post.mood|title }}
+                                </span>
+                            {% endif %}
+                            {% if post.brew_type %}
+                                <span class="badge bg-light text-dark">
+                                    <i class="fas fa-coffee me-1"></i>{{ post.brew_type|replace('_', ' ')|title }}
+                                </span>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex gap-3">
+                                <span class="text-muted">
+                                    <i class="fas fa-heart text-danger"></i> {{ post.likes_count }}
+                                </span>
+                                <span class="text-muted">
+                                    <i class="fas fa-comment"></i> {{ post.comments_count }}
+                                </span>
+                            </div>
+                            <a href="{{ url_for('posts.detail', post_id=post.id) }}" class="btn btn-sm btn-outline-primary">
+                                View
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            
+            <!-- Pagination -->
+            {% if posts.pages > 1 %}
+            <div class="col-12">
+                <nav aria-label="Profile posts pagination">
+                    <ul class="pagination justify-content-center">
+                        {% if posts.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('users.profile', username=user.username, page=posts.prev_num) }}">Previous</a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for page_num in posts.iter_pages() %}
+                            {% if page_num %}
+                                {% if page_num != posts.page %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('users.profile', username=user.username, page=page_num) }}">{{ page_num }}</a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }}</span>
+                                    </li>
+                                {% endif %}
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if posts.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('users.profile', username=user.username, page=posts.next_num) }}">Next</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+        {% else %}
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-camera fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No posts yet</h5>
+                        {% if user == current_user %}
+                            <p class="text-muted">Share your first coffee moment!</p>
+                            <a href="{{ url_for('posts.create') }}" class="btn btn-primary">Create Your First Post</a>
+                        {% else %}
+                            <p class="text-muted">{{ user.first_name }} hasn't shared any posts yet.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

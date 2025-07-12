@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Profile - Brewnara{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">
+                        <i class="fas fa-edit text-primary me-2"></i>Edit Profile
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Current Profile Picture -->
+                        <div class="text-center mb-4">
+                            <img src="{{ url_for('static', filename='uploads/avatars/' + current_user.profile_image) if current_user.profile_image != 'default-avatar.png' else url_for('static', filename='images/default-avatar.png') }}" 
+                                 alt="Current Profile Picture" class="rounded-circle profile-avatar mb-3" id="currentAvatar">
+                            <h5>{{ current_user.full_name }}</h5>
+                            <p class="text-muted">@{{ current_user.username }}</p>
+                        </div>
+                        
+                        <!-- Profile Image Upload -->
+                        <div class="mb-4">
+                            {{ form.profile_image.label(class="form-label") }}
+                            {{ form.profile_image(class="form-control" + (" is-invalid" if form.profile_image.errors else ""), accept="image/*") }}
+                            {% if form.profile_image.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.profile_image.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Upload a new profile picture (JPG, PNG formats only)</div>
+                        </div>
+                        
+                        <!-- Image Preview -->
+                        <div id="imagePreview" class="text-center mb-4" style="display: none;">
+                            <img id="previewImg" src="" alt="Preview" class="rounded-circle" style="width: 120px; height: 120px; object-fit: cover;">
+                            <div class="mt-2">
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeImage()">
+                                    <i class="fas fa-times me-1"></i>Remove New Image
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Personal Information -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.first_name.label(class="form-label") }}
+                                {{ form.first_name(class="form-control" + (" is-invalid" if form.first_name.errors else "")) }}
+                                {% if form.first_name.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.first_name.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.last_name.label(class="form-label") }}
+                                {{ form.last_name(class="form-control" + (" is-invalid" if form.last_name.errors else "")) }}
+                                {% if form.last_name.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.last_name.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Bio -->
+                        <div class="mb-3">
+                            {{ form.bio.label(class="form-label") }}
+                            {{ form.bio(class="form-control" + (" is-invalid" if form.bio.errors else ""), rows="4") }}
+                            {% if form.bio.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.bio.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Tell others about your coffee and tea journey</div>
+                        </div>
+                        
+                        <!-- Location and Favorite Brew -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.location.label(class="form-label") }}
+                                {{ form.location(class="form-control" + (" is-invalid" if form.location.errors else "")) }}
+                                {% if form.location.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.location.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <div class="form-text">Where are you based?</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.favorite_brew.label(class="form-label") }}
+                                {{ form.favorite_brew(class="form-control" + (" is-invalid" if form.favorite_brew.errors else "")) }}
+                                {% if form.favorite_brew.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.favorite_brew.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <div class="form-text">What's your go-to coffee or tea?</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Account Stats (Read-only) -->
+                        <div class="card bg-light mb-4">
+                            <div class="card-body">
+                                <h6 class="card-title">Account Information</h6>
+                                <div class="row text-center">
+                                    <div class="col-4">
+                                        <h5 class="mb-0 text-coffee">{{ current_user.posts_count }}</h5>
+                                        <small class="text-muted">Posts</small>
+                                    </div>
+                                    <div class="col-4">
+                                        <h5 class="mb-0 text-coffee">{{ current_user.followers_count }}</h5>
+                                        <small class="text-muted">Followers</small>
+                                    </div>
+                                    <div class="col-4">
+                                        <h5 class="mb-0 text-coffee">{{ current_user.following_count }}</h5>
+                                        <small class="text-muted">Following</small>
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <strong>Username:</strong> @{{ current_user.username }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <strong>Email:</strong> {{ current_user.email }}
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-md-6">
+                                        <strong>Member since:</strong> {{ current_user.join_date.strftime('%B %Y') }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <strong>Last active:</strong> {{ format_timestamp(current_user.last_seen) }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Form Actions -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('users.profile', username=current_user.username) }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const imageInput = document.getElementById('profile_image');
+    const imagePreview = document.getElementById('imagePreview');
+    const previewImg = document.getElementById('previewImg');
+    const currentAvatar = document.getElementById('currentAvatar');
+    
+    imageInput.addEventListener('change', function(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                imagePreview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+});
+
+function removeImage() {
+    const imageInput = document.getElementById('profile_image');
+    const imagePreview = document.getElementById('imagePreview');
+    
+    imageInput.value = '';
+    imagePreview.style.display = 'none';
+}
+
+// Auto-resize bio textarea
+document.addEventListener('DOMContentLoaded', function() {
+    const bioTextarea = document.getElementById('bio');
+    if (bioTextarea) {
+        bioTextarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+        
+        // Initial resize
+        bioTextarea.style.height = 'auto';
+        bioTextarea.style.height = (bioTextarea.scrollHeight) + 'px';
+    }
+});
+</script>
+{% endblock %}

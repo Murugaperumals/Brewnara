@@ -1,0 +1,391 @@
+{% extends "base.html" %}
+
+{% block title %}Discover - Brewnara{% endblock %}
+
+{% block head %}
+<!-- Google Maps API -->
+<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places&callback=initMap" async defer></script>
+
+<style>
+#map {
+    height: 400px;
+    width: 100%;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.hover-shadow:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <!-- Map Section -->
+        <div class="col-lg-12 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-map-marked-alt text-primary me-2"></i>Friends & Cafes Map
+                        </h5>
+                        <div class="d-flex align-items-center">
+                            <button class="btn btn-outline-success btn-sm me-2" onclick="getUserLocation()">
+                                <i class="fas fa-location-arrow me-1"></i>My Location
+                            </button>
+                            <div class="form-check form-switch me-3">
+                                <input class="form-check-input" type="checkbox" id="showFriends" checked onchange="toggleMarkers('friends')">
+                                <label class="form-check-label" for="showFriends">
+                                    <i class="fas fa-users text-success me-1"></i>Friends
+                                </label>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="showCafes" checked onchange="toggleMarkers('cafes')">
+                                <label class="form-check-label" for="showCafes">
+                                    <i class="fas fa-coffee text-warning me-1"></i>Cafes
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div id="map"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Cafes List -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-coffee text-warning me-2"></i>Nearby Cafes
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% for cafe in cafes %}
+                    <div class="d-flex align-items-center mb-3 p-3 bg-light rounded hover-shadow">
+                        <div class="me-3">
+                            {% if cafe.image_filename %}
+                            <img src="{{ url_for('static', filename='uploads/cafes/' + cafe.image_filename) }}" 
+                                 alt="{{ cafe.name }}" class="rounded" style="width: 60px; height: 60px; object-fit: cover;">
+                            {% else %}
+                            <div class="bg-warning rounded d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                <i class="fas fa-coffee text-white"></i>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">{{ cafe.name }}</h6>
+                            <small class="text-muted">{{ cafe.address }}</small>
+                            {% if cafe.average_rating %}
+                            <div class="text-warning">
+                                {% for i in range(cafe.average_rating|round|int) %}★{% endfor %}
+                                <small class="text-muted">({{ cafe.review_count }} reviews)</small>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="text-end">
+                            <a href="{{ url_for('cafes.cafe_detail', cafe_id=cafe.id) }}" class="btn btn-sm btn-outline-primary">
+                                View Details
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    {% if not cafes %}
+                    <div class="text-center py-4 text-muted">
+                        <i class="fas fa-search mb-2"></i>
+                        <p>No cafes found nearby</p>
+                        <a href="{{ url_for('cafes.add_cafe') }}" class="btn btn-outline-primary">
+                            Add a Cafe
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Friends List -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-users text-success me-2"></i>Friends Nearby
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% for friend in friends %}
+                    <div class="d-flex align-items-center mb-3 p-3 bg-light rounded hover-shadow">
+                        <div class="me-3">
+                            <img src="{{ url_for('static', filename='uploads/avatars/' + friend.profile_image) if friend.profile_image and friend.profile_image not in ['default-avatar.png', 'default-avatar.svg'] else url_for('static', filename='images/default-avatar.svg') }}" 
+                                 alt="{{ friend.full_name }}" class="rounded-circle" style="width: 50px; height: 50px; object-fit: cover;" onerror="this.src='{{ url_for('static', filename='images/default-avatar.svg') }}'">
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">{{ friend.full_name }}</h6>
+                            <small class="text-muted">@{{ friend.username }}</small>
+                            {% if friend.location %}
+                            <div class="small text-muted">
+                                <i class="fas fa-map-marker-alt me-1"></i>{{ friend.location }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="text-end">
+                            <a href="{{ url_for('users.profile', username=friend.username) }}" class="btn btn-sm btn-outline-primary me-1">
+                                Profile
+                            </a>
+                            <a href="{{ url_for('messages.conversation', user_id=friend.id) }}" class="btn btn-sm btn-outline-success">
+                                Message
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    {% if not friends %}
+                    <div class="text-center py-4 text-muted">
+                        <i class="fas fa-user-friends mb-2"></i>
+                        <p>No friends found nearby</p>
+                        <a href="{{ url_for('main.discover') }}" class="btn btn-outline-primary">
+                            Find Friends
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Global variables for Google Maps
+let map = null;
+let userLocation = null;
+let friendMarkers = [];
+let cafeMarkers = [];
+let showFriends = true;
+let showCafes = true;
+let userMarker = null;
+
+// Initialize Google Maps
+function initMap() {
+    console.log('Initializing Google Maps...');
+    
+    // Default location (San Francisco)
+    const defaultLocation = { lat: 37.7749, lng: -122.4194 };
+    
+    // Initialize map
+    map = new google.maps.Map(document.getElementById('map'), {
+        zoom: 13,
+        center: defaultLocation,
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false,
+        styles: [
+            {
+                featureType: "poi",
+                elementType: "labels",
+                stylers: [{ visibility: "off" }]
+            }
+        ]
+    });
+    
+    // Try to get user's location
+    getUserLocation();
+    
+    // Load friends and cafes
+    loadMapData();
+}
+
+// Get user's current location
+function getUserLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                const userLat = position.coords.latitude;
+                const userLng = position.coords.longitude;
+                
+                userLocation = { lat: userLat, lng: userLng };
+                
+                // Update map center
+                if (map) {
+                    map.setCenter(userLocation);
+                    
+                    // Remove old user marker
+                    if (userMarker) {
+                        userMarker.setMap(null);
+                    }
+                    
+                    // Add new user marker
+                    userMarker = new google.maps.Marker({
+                        position: userLocation,
+                        map: map,
+                        title: 'Your Location',
+                        icon: {
+                            path: google.maps.SymbolPath.CIRCLE,
+                            scale: 10,
+                            fillColor: '#4285F4',
+                            fillOpacity: 1,
+                            strokeColor: '#ffffff',
+                            strokeWeight: 2
+                        }
+                    });
+                }
+            },
+            function(error) {
+                console.error('Geolocation error:', error);
+                alert('Unable to get your location. Using default location.');
+            }
+        );
+    } else {
+        alert('Geolocation is not supported by this browser.');
+    }
+}
+
+// Load map data
+function loadMapData() {
+    // Load friends data
+    fetch('/api/friends-locations')
+        .then(response => response.json())
+        .then(data => {
+            if (data.friends) {
+                addFriendsMarkers(data.friends);
+            }
+        })
+        .catch(error => console.error('Error loading friends:', error));
+    
+    // Load cafes data
+    fetch('/api/cafes-locations')
+        .then(response => response.json())
+        .then(data => {
+            if (data.cafes) {
+                addCafeMarkers(data.cafes);
+            }
+        })
+        .catch(error => console.error('Error loading cafes:', error));
+}
+
+// Add friends markers
+function addFriendsMarkers(friends) {
+    friends.forEach(friend => {
+        if (friend.latitude && friend.longitude) {
+            const marker = new google.maps.Marker({
+                position: { lat: parseFloat(friend.latitude), lng: parseFloat(friend.longitude) },
+                map: map,
+                title: friend.full_name,
+                icon: {
+                    url: 'data:image/svg+xml;base64,' + btoa(`
+                        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 30 30">
+                            <circle cx="15" cy="15" r="12" fill="#28a745" stroke="white" stroke-width="2"/>
+                            <text x="15" y="20" text-anchor="middle" fill="white" font-size="12">👤</text>
+                        </svg>
+                    `),
+                    scaledSize: new google.maps.Size(30, 30)
+                }
+            });
+            
+            const infoWindow = new google.maps.InfoWindow({
+                content: `
+                    <div class="p-2">
+                        <h6 class="mb-1">${friend.full_name}</h6>
+                        <small class="text-muted">@${friend.username}</small><br>
+                        <div class="mt-2">
+                            <a href="/profile/${friend.username}" class="btn btn-sm btn-outline-primary me-1">
+                                <i class="fas fa-user me-1"></i>Profile
+                            </a>
+                            <a href="/messages/conversation/${friend.id}" class="btn btn-sm btn-outline-success">
+                                <i class="fas fa-comment me-1"></i>Message
+                            </a>
+                        </div>
+                    </div>
+                `
+            });
+            
+            marker.addListener('click', () => {
+                infoWindow.open(map, marker);
+            });
+            
+            friendMarkers.push(marker);
+        }
+    });
+}
+
+// Add cafe markers
+function addCafeMarkers(cafes) {
+    cafes.forEach(cafe => {
+        if (cafe.latitude && cafe.longitude) {
+            const marker = new google.maps.Marker({
+                position: { lat: parseFloat(cafe.latitude), lng: parseFloat(cafe.longitude) },
+                map: map,
+                title: cafe.name,
+                icon: {
+                    url: 'data:image/svg+xml;base64,' + btoa(`
+                        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 30 30">
+                            <circle cx="15" cy="15" r="12" fill="#8B4513" stroke="white" stroke-width="2"/>
+                            <text x="15" y="20" text-anchor="middle" fill="white" font-size="12">☕</text>
+                        </svg>
+                    `),
+                    scaledSize: new google.maps.Size(30, 30)
+                }
+            });
+            
+            const infoWindow = new google.maps.InfoWindow({
+                content: `
+                    <div class="p-2">
+                        <h6 class="mb-1">${cafe.name}</h6>
+                        <p class="mb-1 small">${cafe.address}</p>
+                        ${cafe.description ? `<p class="mb-2 small text-muted">${cafe.description}</p>` : ''}
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-warning">
+                                ${cafe.average_rating ? '★'.repeat(Math.round(cafe.average_rating)) : 'No reviews'}
+                            </small>
+                            <div>
+                                <a href="/cafes/${cafe.id}" class="btn btn-sm btn-outline-primary me-1">
+                                    <i class="fas fa-info me-1"></i>Details
+                                </a>
+                                <button class="btn btn-sm btn-outline-success" onclick="getDirections(${cafe.latitude}, ${cafe.longitude})">
+                                    <i class="fas fa-directions me-1"></i>Directions
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `
+            });
+            
+            marker.addListener('click', () => {
+                infoWindow.open(map, marker);
+            });
+            
+            cafeMarkers.push(marker);
+        }
+    });
+}
+
+// Toggle markers visibility
+function toggleMarkers(type) {
+    if (type === 'friends') {
+        showFriends = !showFriends;
+        friendMarkers.forEach(marker => {
+            marker.setVisible(showFriends);
+        });
+    } else if (type === 'cafes') {
+        showCafes = !showCafes;
+        cafeMarkers.forEach(marker => {
+            marker.setVisible(showCafes);
+        });
+    }
+}
+
+// Get directions to a location
+function getDirections(lat, lng) {
+    if (userLocation) {
+        const url = `https://www.google.com/maps/dir/${userLocation.lat},${userLocation.lng}/${lat},${lng}`;
+        window.open(url, '_blank');
+    } else {
+        alert('Please allow location access to get directions.');
+    }
+}
+</script>
+{% endblock %}

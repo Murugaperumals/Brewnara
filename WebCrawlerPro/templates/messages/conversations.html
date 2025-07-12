@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card conversation-card">
+                <div class="card-header conversation-header">
+                    <h4 class="card-title mb-0">
+                        <i class="fas fa-envelope me-2"></i>Messages
+                    </h4>
+                </div>
+                <div class="card-body">
+                    {% if conversations %}
+                        {% for conversation in conversations %}
+                        <div class="d-flex align-items-center p-3 border-bottom conversation-item" onclick="window.location.href='{{ url_for('messages.conversation', user_id=conversation.partner.id) }}'" style="cursor: pointer;">
+                            <div class="position-relative me-3">
+                                <img src="{{ url_for('static', filename='uploads/avatars/' + conversation.partner.profile_image) if conversation.partner.profile_image not in ['default-avatar.png', 'default-avatar.svg'] else url_for('static', filename='images/default-avatar.svg') }}" 
+                                     alt="{{ conversation.partner.full_name }}" class="rounded-circle" style="width: 50px; height: 50px; object-fit: cover;">
+                                {% set icon_class, icon_color, status_text = conversation.partner.get_status_icon() %}
+                                <span class="position-absolute bottom-0 end-0 status-indicator {{ status_text }}" 
+                                      style="background: {{ icon_color }}; color: white; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; font-size: 8px;"
+                                      title="{{ status_text.title() }}">
+                                    <i class="{{ icon_class }}" style="font-size: 8px;"></i>
+                                </span>
+                            </div>
+                            
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-1">{{ conversation.partner.full_name }}</h6>
+                                    <small class="text-muted">{{ format_timestamp(conversation.last_message.timestamp) }}</small>
+                                </div>
+                                <p class="mb-0 text-muted">
+                                    {% if conversation.last_message.sender_id == current_user.id %}
+                                        <i class="fas fa-reply text-primary me-1"></i>You: 
+                                    {% endif %}
+                                    {{ conversation.last_message.content[:60] }}{% if conversation.last_message.content|length > 60 %}...{% endif %}
+                                </p>
+                            </div>
+                            
+                            <div class="d-flex flex-column align-items-end">
+                                {% if conversation.unread_count > 0 %}
+                                <span class="badge bg-danger rounded-pill mb-1">{{ conversation.unread_count }}</span>
+                                {% endif %}
+                                <i class="fas fa-chevron-right text-muted"></i>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-envelope-open-text fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No conversations yet</h5>
+                            <p class="text-muted">Start a conversation by visiting someone's profile and clicking "Message"</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.conversation-item:hover {
+    background-color: #f8f9fa;
+    cursor: pointer;
+    transform: translateX(5px);
+    transition: all 0.3s ease;
+}
+
+.conversation-item {
+    transition: all 0.3s ease;
+    border-radius: 8px;
+    margin: 5px 0;
+}
+
+.conversation-item:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.conversation-item img {
+    border: 2px solid #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+</style>
+{% endblock %}

@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In - Brewnara{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <div class="container-fluid">
+        <div class="row min-vh-100">
+            <!-- Left side - Login Form -->
+            <div class="col-lg-6 d-flex align-items-center justify-content-center bg-white">
+                <div class="auth-form-container">
+                    <div class="text-center mb-4">
+                        <h2 class="fw-bold text-coffee">
+                            <i class="fas fa-coffee me-2"></i>
+                            Brewnara
+                        </h2>
+                        <p class="text-muted">Welcome back! Sign in to your account.</p>
+                    </div>
+                    
+                    <form method="POST" class="auth-form">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ form.username.label(class="form-label") }}
+                            {{ form.username(class="form-control form-control-lg" + (" is-invalid" if form.username.errors else "")) }}
+                            {% if form.username.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.username.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-4">
+                            {{ form.password.label(class="form-label") }}
+                            <div class="input-group">
+                                {{ form.password(class="form-control form-control-lg" + (" is-invalid" if form.password.errors else ""), id="loginPassword") }}
+                                <button class="btn btn-outline-secondary" type="button" id="toggleLoginPassword">
+                                    <i class="fas fa-eye" id="loginPasswordIcon"></i>
+                                </button>
+                            </div>
+                            {% if form.password.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.password.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-grid mb-3">
+                            {{ form.submit(class="btn btn-primary btn-lg") }}
+                        </div>
+                        
+                        <div class="text-center">
+                            <p class="text-muted">
+                                Don't have an account? 
+                                <a href="{{ url_for('auth.register') }}" class="text-decoration-none">Sign up</a>
+                            </p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Right side - Coffee Journey -->
+            <div class="col-lg-6 d-none d-lg-flex align-items-center justify-content-center bg-coffee text-white">
+                <div class="auth-info text-center">
+                    <div class="mb-4">
+                        <i class="fas fa-route fa-3x mb-3"></i>
+                        <h3 class="fw-bold">Share Your Coffee Journey</h3>
+                    </div>
+                    <p class="lead mb-4">
+                        Connect with fellow coffee and tea enthusiasts. 
+                        Share your brewing adventures and discover amazing cafes.
+                    </p>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle me-2"></i>
+                            Share your mood and brewing experiences
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle me-2"></i>
+                            Connect with a community of brew lovers
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle me-2"></i>
+                            Discover trending cafes and locations
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

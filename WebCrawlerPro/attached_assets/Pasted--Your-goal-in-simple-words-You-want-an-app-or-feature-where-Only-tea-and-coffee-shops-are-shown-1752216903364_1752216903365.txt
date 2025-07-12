@@ -1,0 +1,69 @@
+✅ Your goal (in simple words)
+You want an app or feature where:
+
+Only tea and coffee shops are shown on a map in a given area.
+
+Friends can share their live location if they’re visiting any of these places.
+
+Friends can see each other’s locations on the same map in real time.
+
+🗺️ How Google Maps does this (high-level)
+Map Data
+Google uses huge location databases (places API) to show all types of places.
+It filters them using categories — e.g., cafe, coffee shop, tea house.
+
+Live Location Sharing
+Google lets you share your live location with specific people (contacts) using GPS.
+This updates every few seconds to minutes.
+
+Overlay on Map
+Your location + friends’ locations + places are shown as pins on the same map.
+
+✅ How YOUR version would work
+Here’s the basic architecture:
+
+1️⃣ Map & Places
+Use a map service like Google Maps API, Mapbox, or OpenStreetMap.
+
+Use their Places API or your own database to only show:
+
+Shops that are tagged as coffee or tea.
+
+Or your own manually curated list if you want it local and special.
+
+2️⃣ Live User Locations
+Each user’s mobile device sends their live GPS coordinates to your backend server.
+
+This can use sockets (like WebSocket) for real-time updates, or polling every few seconds.
+
+3️⃣ Friends & Privacy
+Each user can choose which friends see their location.
+
+Store friend connections and permissions in your database.
+
+4️⃣ Map Display
+Your app fetches:
+
+All nearby tea/coffee shops
+
+Friends’ locations
+
+It shows both on the map with different icons (shop vs. friend).
+
+⚙️ Key tech parts you’d need
+Part	How to build or use
+Map SDK	Google Maps, Mapbox, or Leaflet.js
+Places data	Google Places API, Foursquare API, or your custom database
+Live location tracking	Mobile GPS + WebSocket (Firebase, Supabase Realtime, or your server with Socket.io)
+User auth & friends	Firebase Auth, Supabase Auth, or your own user system
+Backend storage	Store user locations, friends list, permissions
+Frontend display	React Native, Flutter, or a web app with React.js & Leaflet
+
+🧩 Example: user flow
+You open the app → see a map with tea & coffee shops in your area.
+
+You tap “Share my location” → your friends see you on the map.
+
+Your friends open the app → they see where you are & which shop you’re at.
+
+You tap on a friend’s icon → you can navigate to them or chat.

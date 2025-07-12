@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block title %}Search{% if query %} - {{ query }}{% endif %} - Brewnara{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Search Form -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('main.search') }}">
+                <div class="input-group">
+                    <input type="text" class="form-control form-control-lg" name="q" 
+                           value="{{ query }}" placeholder="Search users, posts, or locations...">
+                    <button class="btn btn-primary" type="submit">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    {% if query %}
+        <h4 class="mb-4">Search results for "{{ query }}"</h4>
+        
+        <!-- Search Results Tabs -->
+        <ul class="nav nav-tabs mb-4" id="searchTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab">
+                    <i class="fas fa-users me-2"></i>Users ({{ users|length }})
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="posts-tab" data-bs-toggle="tab" data-bs-target="#posts" type="button" role="tab">
+                    <i class="fas fa-file-alt me-2"></i>Posts ({{ posts|length }})
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="locations-tab" data-bs-toggle="tab" data-bs-target="#locations" type="button" role="tab">
+                    <i class="fas fa-map-marker-alt me-2"></i>Locations ({{ locations|length }})
+                </button>
+            </li>
+        </ul>
+        
+        <div class="tab-content" id="searchTabsContent">
+            <!-- Users Tab -->
+            <div class="tab-pane fade show active" id="users" role="tabpanel">
+                {% if users %}
+                    <div class="row">
+                        {% for user in users %}
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <img src="{{ url_for('static', filename='uploads/avatars/' + user.profile_image) if user.profile_image != 'default-avatar.png' else url_for('static', filename='images/default-avatar.png') }}" 
+                                         alt="{{ user.full_name }}" class="rounded-circle mb-3" style="width: 80px; height: 80px; object-fit: cover;">
+                                    <h6 class="card-title">{{ user.full_name }}</h6>
+                                    <p class="text-muted">@{{ user.username }}</p>
+                                    {% if user.bio %}
+                                        <p class="card-text">{{ user.bio[:100] }}{% if user.bio|length > 100 %}...{% endif %}</p>
+                                    {% endif %}
+                                    <div class="d-flex justify-content-center gap-3 mb-3">
+                                        <small class="text-muted">{{ user.posts_count }} posts</small>
+                                        <small class="text-muted">{{ user.followers_count }} followers</small>
+                                    </div>
+                                    <div class="d-grid gap-2">
+                                        <a href="{{ url_for('users.profile', username=user.username) }}" class="btn btn-outline-primary btn-sm">
+                                            View Profile
+                                        </a>
+                                        {% if user != current_user %}
+                                            <button class="btn btn-primary btn-sm follow-btn" data-username="{{ user.username }}">
+                                                {% if current_user.is_following(user) %}Following{% else %}Follow{% endif %}
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-user-slash fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No users found</h5>
+                        <p class="text-muted">Try searching with different keywords.</p>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Posts Tab -->
+            <div class="tab-pane fade" id="posts" role="tabpanel">
+                {% if posts %}
+                    <div class="row">
+                        {% for post in posts %}
+                        <div class="col-lg-6 mb-4">
+                            <div class="card post-card h-100">
+                                <!-- Post Header -->
+                                <div class="card-header bg-white border-0">
+                                    <div class="d-flex align-items-center">
+                                        <img src="{{ url_for('static', filename='uploads/avatars/' + post.author.profile_image) if post.author.profile_image != 'default-avatar.png' else url_for('static', filename='images/default-avatar.png') }}" 
+                                             alt="{{ post.author.full_name }}" class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;">
+                                        <div>
+                                            <h6 class="mb-0 fw-bold">
+                                                <a href="{{ url_for('users.profile', username=post.author.username) }}" class="text-decoration-none text-dark">
+                                                    {{ post.author.full_name }}
+                                                </a>
+                                            </h6>
+                                            <small class="text-muted">@{{ post.author.username }} • {{ format_timestamp(post.timestamp) }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                {% if post.image_url %}
+                                <div class="post-image-container">
+                                    <img src="{{ url_for('static', filename='uploads/posts/' + post.image_url) }}" 
+                                         alt="Post Image" class="card-img post-image">
+                                </div>
+                                {% endif %}
+                                
+                                <div class="card-body">
+                                    <p class="card-text">{{ post.content[:200] }}{% if post.content|length > 200 %}...{% endif %}</p>
+                                    
+                                    {% if post.location %}
+                                    <p class="text-muted mb-2">
+                                        <i class="fas fa-map-marker-alt me-1"></i>{{ post.location }}
+                                    </p>
+                                    {% endif %}
+                                    
+                                    {% if post.mood or post.brew_type %}
+                                    <div class="mb-3">
+                                        {% if post.mood %}
+                                            <span class="badge bg-light text-dark me-2">
+                                                <i class="fas fa-smile me-1"></i>{{ post.mood|title }}
+                                            </span>
+                                        {% endif %}
+                                        {% if post.brew_type %}
+                                            <span class="badge bg-light text-dark">
+                                                <i class="fas fa-coffee me-1"></i>{{ post.brew_type|replace('_', ' ')|title }}
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="d-flex gap-3">
+                                            <button class="btn btn-sm btn-outline-danger like-btn" data-post-id="{{ post.id }}">
+                                                <i class="fas fa-heart {% if post.is_liked_by(current_user) %}text-danger{% endif %}"></i>
+                                                <span class="likes-count">{{ post.likes_count }}</span>
+                                            </button>
+                                            <span class="text-muted">
+                                                <i class="fas fa-comment"></i> {{ post.comments_count }}
+                                            </span>
+                                        </div>
+                                        <a href="{{ url_for('posts.detail', post_id=post.id) }}" class="btn btn-sm btn-primary">
+                                            View Details
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-file-slash fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No posts found</h5>
+                        <p class="text-muted">Try searching with different keywords.</p>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Locations Tab -->
+            <div class="tab-pane fade" id="locations" role="tabpanel">
+                {% if locations %}
+                    <div class="row">
+                        {% for location in locations %}
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <i class="fas fa-map-marker-alt text-warning me-2"></i>
+                                        {{ location.location }}
+                                    </h6>
+                                    <a href="{{ url_for('main.search', q=location.location) }}" class="btn btn-outline-primary btn-sm">
+                                        View Posts at this Location
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-map-marker-slash fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No locations found</h5>
+                        <p class="text-muted">Try searching with different keywords.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    {% else %}
+        <!-- Search Suggestions -->
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-search fa-3x text-muted mb-4"></i>
+                        <h5>Search Brewnara</h5>
+                        <p class="text-muted mb-4">Find users, posts, and locations in our coffee and tea community.</p>
+                        
+                        <div class="row text-start">
+                            <div class="col-md-4 mb-3">
+                                <h6><i class="fas fa-users text-primary me-2"></i>Find Users</h6>
+                                <p class="text-muted small">Search by name or username to find fellow coffee and tea enthusiasts.</p>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <h6><i class="fas fa-file-alt text-success me-2"></i>Discover Posts</h6>
+                                <p class="text-muted small">Find posts about specific topics, brews, or experiences.</p>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <h6><i class="fas fa-map-marker-alt text-warning me-2"></i>Explore Locations</h6>
+                                <p class="text-muted small">Search for cafes, tea shops, and brewing locations.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

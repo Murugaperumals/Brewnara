@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">
+                        <i class="fas fa-edit me-2"></i>Edit Post
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Content -->
+                        <div class="mb-3">
+                            {{ form.content.label(class="form-label") }}
+                            {{ form.content(class="form-control", rows="4") }}
+                            {% if form.content.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.content.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Current Image -->
+                        {% if post.image_url %}
+                        <div class="mb-3">
+                            <label class="form-label">Current Image</label>
+                            <div class="mb-2">
+                                <img src="{{ url_for('static', filename='uploads/posts/' + post.image_url) }}" 
+                                     alt="Current post image" class="img-fluid rounded" style="max-height: 200px;">
+                            </div>
+                            <small class="text-muted">Upload a new image to replace the current one</small>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Image Upload -->
+                        <div class="mb-3">
+                            {{ form.image.label(class="form-label") }}
+                            {{ form.image(class="form-control") }}
+                            {% if form.image.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.image.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Location -->
+                        <div class="mb-3">
+                            {{ form.location.label(class="form-label") }}
+                            {{ form.location(class="form-control") }}
+                            {% if form.location.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.location.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Mood and Brew Type -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                {{ form.mood.label(class="form-label") }}
+                                {{ form.mood(class="form-select") }}
+                                {% if form.mood.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.mood.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.brew_type.label(class="form-label") }}
+                                {{ form.brew_type(class="form-select") }}
+                                {% if form.brew_type.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.brew_type.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Buttons -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('posts.detail', post_id=post.id) }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Update Post
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Auto-resize textarea
+document.addEventListener('DOMContentLoaded', function() {
+    const textarea = document.querySelector('textarea[name="content"]');
+    if (textarea) {
+        textarea.style.height = 'auto';
+        textarea.style.height = textarea.scrollHeight + 'px';
+        
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = this.scrollHeight + 'px';
+        });
+    }
+});
+</script>
+{% endblock %}

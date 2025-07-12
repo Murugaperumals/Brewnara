@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="landing-page">
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <div class="row align-items-center min-vh-100">
+                <div class="col-lg-6">
+                    <div class="hero-content">
+                        <h1 class="display-4 fw-bold text-coffee mb-4">
+                            <i class="fas fa-coffee text-primary"></i>
+                            Brewnara
+                        </h1>
+                        <p class="lead text-muted mb-4">
+                            Share Your Coffee & Tea Moments
+                        </p>
+                        <p class="h5 mb-5 text-secondary">
+                            Connect with fellow coffee and tea enthusiasts. Share your brewing adventures, 
+                            discover new cafes, and build a community around the beverages we love.
+                        </p>
+                        <div class="d-grid gap-3 d-md-flex">
+                            <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg px-4">
+                                Get Started
+                            </a>
+                            <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary btn-lg px-4">
+                                Sign In
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="hero-image text-center">
+                        <i class="fas fa-mug-hot hero-icon text-coffee"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Features Section -->
+    <section class="features-section py-5 bg-light">
+        <div class="container">
+            <div class="row text-center mb-5">
+                <div class="col-lg-8 mx-auto">
+                    <h2 class="display-5 fw-bold text-coffee mb-3">
+                        Why Coffee & Tea Lovers Choose Brewnara
+                    </h2>
+                    <p class="lead text-muted">
+                        Everything you need to share and discover amazing coffee and tea experiences.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="row g-4">
+                <div class="col-md-6 col-lg-3">
+                    <div class="feature-card text-center h-100">
+                        <div class="feature-icon mb-3">
+                            <i class="fas fa-camera text-primary"></i>
+                        </div>
+                        <h5 class="fw-bold">Share Stories</h5>
+                        <p class="text-muted">
+                            Share your favorite coffee and tea moments with beautiful photos and stories.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 col-lg-3">
+                    <div class="feature-card text-center h-100">
+                        <div class="feature-icon mb-3">
+                            <i class="fas fa-map-marker-alt text-warning"></i>
+                        </div>
+                        <h5 class="fw-bold">Share Locations</h5>
+                        <p class="text-muted">
+                            Discover new cafes and tea shops, and share your location-based experiences.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 col-lg-3">
+                    <div class="feature-card text-center h-100">
+                        <div class="feature-icon mb-3">
+                            <i class="fas fa-users text-success"></i>
+                        </div>
+                        <h5 class="fw-bold">Community</h5>
+                        <p class="text-muted">
+                            Connect with like-minded coffee and tea lovers from around the world.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 col-lg-3">
+                    <div class="feature-card text-center h-100">
+                        <div class="feature-icon mb-3">
+                            <i class="fas fa-compass text-info"></i>
+                        </div>
+                        <h5 class="fw-bold">Discover</h5>
+                        <p class="text-muted">
+                            Find trending locations and discover new brewing techniques and recipes.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- CTA Section -->
+    <section class="cta-section py-5">
+        <div class="container">
+            <div class="row text-center">
+                <div class="col-lg-8 mx-auto">
+                    <h3 class="display-6 fw-bold text-coffee mb-3">
+                        Ready to Share Your Next Coffee Moment?
+                    </h3>
+                    <p class="lead text-muted mb-4">
+                        Join thousands of coffee and tea lovers already sharing their experiences.
+                    </p>
+                    <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">
+                        Join Brewnara Today
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}

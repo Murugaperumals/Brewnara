@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">
+                        <i class="fas fa-bell me-2"></i>Notifications
+                    </h4>
+                </div>
+                <div class="card-body">
+                    {% if notifications.items %}
+                        {% for notification in notifications.items %}
+                        <div class="d-flex align-items-start p-3 border-bottom notification-item {{ 'bg-light' if not notification.is_read else '' }}">
+                            <div class="me-3">
+                                {% if notification.type == 'like' %}
+                                    <i class="fas fa-heart text-danger fa-lg"></i>
+                                {% elif notification.type == 'comment' %}
+                                    <i class="fas fa-comment text-primary fa-lg"></i>
+                                {% elif notification.type == 'follow' %}
+                                    <i class="fas fa-user-plus text-success fa-lg"></i>
+                                {% elif notification.type == 'message' %}
+                                    <i class="fas fa-envelope text-info fa-lg"></i>
+                                {% elif notification.type == 'cafe_review' %}
+                                    <i class="fas fa-star text-warning fa-lg"></i>
+                                {% else %}
+                                    <i class="fas fa-bell text-secondary fa-lg"></i>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">{{ notification.title }}</h6>
+                                <p class="mb-1 text-muted">{{ notification.message }}</p>
+                                <small class="text-muted">{{ format_timestamp(notification.timestamp) }}</small>
+                            </div>
+                            
+                            {% if notification.action_url %}
+                            <a href="{{ notification.action_url }}" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-arrow-right"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                        
+                        <!-- Pagination -->
+                        {% if notifications.pages > 1 %}
+                        <div class="d-flex justify-content-center mt-4">
+                            <nav>
+                                <ul class="pagination">
+                                    {% if notifications.has_prev %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('notifications.notifications', page=notifications.prev_num) }}">Previous</a>
+                                    </li>
+                                    {% endif %}
+                                    
+                                    {% for page_num in notifications.iter_pages() %}
+                                        {% if page_num %}
+                                            {% if page_num != notifications.page %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ url_for('notifications.notifications', page=page_num) }}">{{ page_num }}</a>
+                                            </li>
+                                            {% else %}
+                                            <li class="page-item active">
+                                                <span class="page-link">{{ page_num }}</span>
+                                            </li>
+                                            {% endif %}
+                                        {% else %}
+                                        <li class="page-item disabled">
+                                            <span class="page-link">...</span>
+                                        </li>
+                                        {% endif %}
+                                    {% endfor %}
+                                    
+                                    {% if notifications.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('notifications.notifications', page=notifications.next_num) }}">Next</a>
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-bell-slash fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No notifications yet</h5>
+                            <p class="text-muted">We'll notify you when there's activity on your posts or when someone follows you</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.notification-item:hover {
+    background-color: #f8f9fa;
+}
+</style>
+{% endblock %}

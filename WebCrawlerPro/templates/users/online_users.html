@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card conversation-card">
+                <div class="card-header conversation-header">
+                    <h4 class="card-title mb-0">
+                        <i class="fas fa-users me-2"></i>Friends Activity
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Online Users -->
+                        <div class="col-md-4">
+                            <h6 class="text-success mb-3">
+                                <i class="fas fa-leaf me-2"></i>Online Now
+                            </h6>
+                            {% for user in online_users %}
+                            <div class="d-flex align-items-center mb-3 p-2 rounded hover-card" style="cursor: pointer;" onclick="window.location.href='{{ url_for('users.profile', username=user.username) }}'">
+                                <div class="position-relative me-3">
+                                    <img src="{{ url_for('static', filename='uploads/avatars/' + user.profile_image) if user.profile_image not in ['default-avatar.png', 'default-avatar.svg'] else url_for('static', filename='images/default-avatar.svg') }}" 
+                                         alt="{{ user.full_name }}" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
+                                    <span class="position-absolute bottom-0 end-0 status-indicator online" 
+                                          style="background: #28a745; color: white; width: 14px; height: 14px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; font-size: 6px;">
+                                        <i class="fas fa-leaf" style="font-size: 6px;"></i>
+                                    </span>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-0">{{ user.full_name }}</h6>
+                                    <small class="text-muted">@{{ user.username }}</small>
+                                </div>
+                                <div class="d-flex gap-1">
+                                    <a href="{{ url_for('messages.conversation', user_id=user.id) }}" class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation();">
+                                        <i class="fas fa-comment"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            {% else %}
+                            <p class="text-muted">No one is currently online</p>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Idle Users -->
+                        <div class="col-md-4">
+                            <h6 class="text-primary mb-3">
+                                <i class="fas fa-coffee me-2"></i>Taking a Sip (Idle)
+                            </h6>
+                            {% for user in idle_users %}
+                            <div class="d-flex align-items-center mb-3 p-2 rounded hover-card" style="cursor: pointer;" onclick="window.location.href='{{ url_for('users.profile', username=user.username) }}'">
+                                <div class="position-relative me-3">
+                                    <img src="{{ url_for('static', filename='uploads/avatars/' + user.profile_image) if user.profile_image not in ['default-avatar.png', 'default-avatar.svg'] else url_for('static', filename='images/default-avatar.svg') }}" 
+                                         alt="{{ user.full_name }}" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
+                                    <span class="position-absolute bottom-0 end-0 status-indicator idle" 
+                                          style="background: #007bff; color: white; width: 14px; height: 14px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; font-size: 6px;">
+                                        <i class="fas fa-coffee" style="font-size: 6px;"></i>
+                                    </span>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-0">{{ user.full_name }}</h6>
+                                    <small class="text-muted">@{{ user.username }}</small>
+                                </div>
+                                <div class="d-flex gap-1">
+                                    <a href="{{ url_for('messages.conversation', user_id=user.id) }}" class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation();">
+                                        <i class="fas fa-comment"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            {% else %}
+                            <p class="text-muted">No one is currently idle</p>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Away Users -->
+                        <div class="col-md-4">
+                            <h6 class="mb-3" style="color: #8B4513;">
+                                <i class="fas fa-mug-hot me-2"></i>Brewing Away
+                            </h6>
+                            {% for user in away_users %}
+                            <div class="d-flex align-items-center mb-3 p-2 rounded hover-card" style="cursor: pointer;" onclick="window.location.href='{{ url_for('users.profile', username=user.username) }}'">
+                                <div class="position-relative me-3">
+                                    <img src="{{ url_for('static', filename='uploads/avatars/' + user.profile_image) if user.profile_image not in ['default-avatar.png', 'default-avatar.svg'] else url_for('static', filename='images/default-avatar.svg') }}" 
+                                         alt="{{ user.full_name }}" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
+                                    <span class="position-absolute bottom-0 end-0 status-indicator away" 
+                                          style="background: #8B4513; color: white; width: 14px; height: 14px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; font-size: 6px;">
+                                        <i class="fas fa-mug-hot" style="font-size: 6px;"></i>
+                                    </span>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-0">{{ user.full_name }}</h6>
+                                    <small class="text-muted">@{{ user.username }}</small>
+                                </div>
+                                <div class="d-flex gap-1">
+                                    <a href="{{ url_for('messages.conversation', user_id=user.id) }}" class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation();">
+                                        <i class="fas fa-comment"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            {% else %}
+                            <p class="text-muted">No one is currently away</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.hover-card:hover {
+    background-color: #f8f9fa !important;
+    transform: translateX(2px);
+    transition: all 0.3s ease;
+}
+</style>
+
+<script>
+// Auto-refresh every 30 seconds
+setInterval(function() {
+    window.location.reload();
+}, 30000);
+</script>
+{% endblock %}

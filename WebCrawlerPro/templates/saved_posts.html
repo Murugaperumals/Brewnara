@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+
+{% block title %}Saved Posts - Brewnara{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <!-- Header -->
+            <div class="d-flex align-items-center justify-content-between mb-4">
+                <h2 class="mb-0">
+                    <i class="fas fa-bookmark text-primary me-2"></i>Saved Posts
+                </h2>
+                <p class="text-muted mb-0">Your collection of saved coffee and tea moments</p>
+            </div>
+            
+            {% if posts.items %}
+                <div class="row">
+                    {% for post in posts.items %}
+                    <div class="col-lg-6 mb-4">
+                        <div class="card post-card h-100">
+                            <!-- Post Header -->
+                            <div class="card-header bg-white border-0">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <img src="{{ url_for('static', filename='uploads/avatars/' + post.author.profile_image) if post.author.profile_image != 'default-avatar.png' else url_for('static', filename='images/default-avatar.png') }}" 
+                                             alt="{{ post.author.full_name }}" class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;">
+                                        <div>
+                                            <h6 class="mb-0 fw-bold">
+                                                <a href="{{ url_for('users.profile', username=post.author.username) }}" class="text-decoration-none text-dark">
+                                                    {{ post.author.full_name }}
+                                                </a>
+                                            </h6>
+                                            <small class="text-muted">
+                                                @{{ post.author.username }} • {{ format_timestamp(post.timestamp) }}
+                                                {% if post.location %}
+                                                    • <i class="fas fa-map-marker-alt"></i> {{ post.location }}
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                            <i class="fas fa-ellipsis-h"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <li><a class="dropdown-item save-post-btn" href="#" data-post-id="{{ post.id }}">
+                                                <i class="fas fa-bookmark me-2"></i>Unsave Post
+                                            </a></li>
+                                            <li><a class="dropdown-item" href="{{ url_for('posts.detail', post_id=post.id) }}">
+                                                <i class="fas fa-external-link-alt me-2"></i>View Original
+                                            </a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                
+                                <!-- Mood and Brew Type -->
+                                {% if post.mood or post.brew_type %}
+                                <div class="mt-2">
+                                    {% if post.mood %}
+                                        <span class="badge bg-light text-dark me-2">
+                                            <i class="fas fa-smile me-1"></i>{{ post.mood|title }}
+                                        </span>
+                                    {% endif %}
+                                    {% if post.brew_type %}
+                                        <span class="badge bg-light text-dark">
+                                            <i class="fas fa-coffee me-1"></i>{{ post.brew_type|replace('_', ' ')|title }}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Post Image -->
+                            {% if post.image_url %}
+                            <div class="post-image-container">
+                                <img src="{{ url_for('static', filename='uploads/posts/' + post.image_url) }}" 
+                                     alt="Post Image" class="card-img post-image">
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Post Content -->
+                            <div class="card-body">
+                                <p class="card-text">{{ post.content }}</p>
+                            </div>
+                            
+                            <!-- Post Actions -->
+                            <div class="card-footer bg-white border-0">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="d-flex gap-3">
+                                        <button class="btn btn-sm btn-outline-danger like-btn" data-post-id="{{ post.id }}">
+                                            <i class="fas fa-heart {% if post.is_liked_by(current_user) %}text-danger{% endif %}"></i>
+                                            <span class="likes-count">{{ post.likes_count }}</span>
+                                        </button>
+                                        <a href="{{ url_for('posts.detail', post_id=post.id) }}" class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-comment"></i>
+                                            {{ post.comments_count }}
+                                        </a>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <small class="text-muted">
+                                            Saved {{ format_timestamp(post.timestamp) }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Pagination -->
+                {% if posts.pages > 1 %}
+                <nav aria-label="Saved posts pagination">
+                    <ul class="pagination justify-content-center">
+                        {% if posts.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('users.saved_posts', page=posts.prev_num) }}">Previous</a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for page_num in posts.iter_pages() %}
+                            {% if page_num %}
+                                {% if page_num != posts.page %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('users.saved_posts', page=page_num) }}">{{ page_num }}</a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }}</span>
+                                    </li>
+                                {% endif %}
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if posts.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('users.saved_posts', page=posts.next_num) }}">Next</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            {% else %}
+                <!-- Empty State -->
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <div class="empty-state">
+                            <i class="fas fa-bookmark fa-3x text-muted mb-4"></i>
+                            <h4 class="text-muted mb-3">No Saved Posts Yet</h4>
+                            <p class="text-muted mb-4">
+                                Save posts that inspire you by clicking the bookmark icon on any post. 
+                                Your saved posts will appear here for easy access later.
+                            </p>
+                            <div class="d-flex justify-content-center gap-3">
+                                <a href="{{ url_for('main.feed') }}" class="btn btn-primary">
+                                    <i class="fas fa-home me-2"></i>Browse Feed
+                                </a>
+                                <a href="{{ url_for('main.discover') }}" class="btn btn-outline-primary">
+                                    <i class="fas fa-compass me-2"></i>Discover Posts
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tips Card -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">
+                            <i class="fas fa-lightbulb text-warning me-2"></i>Tips for Saving Posts
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <h6><i class="fas fa-coffee text-primary me-2"></i>Brewing Techniques</h6>
+                                <p class="text-muted small">Save posts with unique brewing methods or recipes you want to try later.</p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <h6><i class="fas fa-map-marker-alt text-success me-2"></i>Cafe Locations</h6>
+                                <p class="text-muted small">Bookmark posts about interesting cafes and tea shops to visit in the future.</p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <h6><i class="fas fa-camera text-info me-2"></i>Inspiration</h6>
+                                <p class="text-muted small">Save beautifully photographed coffee and tea moments for inspiration.</p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <h6><i class="fas fa-users text-warning me-2"></i>Community</h6>
+                                <p class="text-muted small">Keep track of posts from your favorite coffee and tea enthusiasts.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Remove post from saved when unsaved
+document.addEventListener('DOMContentLoaded', function() {
+    const saveButtons = document.querySelectorAll('.save-post-btn');
+    
+    saveButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const postId = this.getAttribute('data-post-id');
+            const postCard = this.closest('.col-lg-6');
+            
+            // Send AJAX request to unsave
+            fetch(`/posts/${postId}/save`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.saved) {
+                    // Animate removal
+                    postCard.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                    postCard.style.opacity = '0';
+                    postCard.style.transform = 'translateY(-20px)';
+                    
+                    setTimeout(() => {
+                        postCard.remove();
+                        
+                        // Check if no posts left
+                        const remainingPosts = document.querySelectorAll('.post-card').length;
+                        if (remainingPosts === 0) {
+                            // Reload page to show empty state
+                            window.location.reload();
+                        }
+                    }, 300);
+                    
+                    showNotification('Post removed from saved posts!', 'info');
+                }
+            })
+            .catch(error => {
+                console.error('Error unsaving post:', error);
+                showNotification('Error removing post. Please try again.', 'error');
+            });
+        });
+    });
+});
+
+// Helper function to get CSRF token
+function getCSRFToken() {
+    const tokenInput = document.querySelector('input[name="csrf_token"]');
+    return tokenInput ? tokenInput.value : '';
+}
+
+// Helper function to show notifications
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show notification-toast`;
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    notification.style.cssText = `
+        position: fixed;
+        top: 100px;
+        right: 20px;
+        z-index: 1050;
+        max-width: 300px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,15 @@
+<!-- User Achievements Component -->
+{% if current_user.is_authenticated %}
+<div class="user-achievements mt-3">
+    <h6 class="achievements-title">
+        <i class="fas fa-trophy me-2 text-warning"></i>Achievements
+    </h6>
+    <div class="achievements-grid d-flex flex-wrap gap-2">
+        <!-- Achievements coming soon -->
+        <div class="achievement-placeholder text-muted">
+            <i class="fas fa-star me-2"></i>
+            Start sharing posts and engaging with the community to earn achievements!
+        </div>
+    </div>
+</div>
+{% endif %}

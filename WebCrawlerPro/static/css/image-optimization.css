@@ -1,0 +1,65 @@
+/* Image Optimization and Loading Enhancements */
+
+/* Profile Avatar Styles */
+.navbar-avatar, .profile-avatar, .post-avatar {
+    background: linear-gradient(135deg, #8B4513, #D2691E);
+    border: 2px solid #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.navbar-avatar {
+    width: 32px;
+    height: 32px;
+}
+
+.profile-avatar {
+    width: 120px;
+    height: 120px;
+}
+
+.post-avatar {
+    width: 50px;
+    height: 50px;
+}
+
+/* Image Loading States */
+img[src*="uploads"] {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    position: relative;
+}
+
+/* Loading animation for images */
+@keyframes shimmer {
+    0% { background-position: -1000px 0; }
+    100% { background-position: 1000px 0; }
+}
+
+.image-loading {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite;
+}
+
+/* Image Error State */
+.image-error {
+    background: linear-gradient(135deg, #8B4513, #D2691E);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+}
+
+/* Responsive Image Handling */
+@media (max-width: 768px) {
+    .profile-avatar {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .post-avatar {
+        width: 40px;
+        height: 40px;
+    }
+}

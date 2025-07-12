@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2><i class="fas fa-store me-2"></i>Coffee & Tea Spots</h2>
+                <a href="{{ url_for('cafes.add_cafe') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Add New Cafe
+                </a>
+            </div>
+            
+            <!-- Category Filter -->
+            <div class="mt-3">
+                <div class="btn-group" role="group">
+                    <a href="{{ url_for('cafes.cafe_list', category='all') }}" 
+                       class="btn {{ 'btn-primary' if category == 'all' else 'btn-outline-primary' }}">All</a>
+                    <a href="{{ url_for('cafes.cafe_list', category='coffee') }}" 
+                       class="btn {{ 'btn-primary' if category == 'coffee' else 'btn-outline-primary' }}">Coffee</a>
+                    <a href="{{ url_for('cafes.cafe_list', category='tea') }}" 
+                       class="btn {{ 'btn-primary' if category == 'tea' else 'btn-outline-primary' }}">Tea</a>
+                    <a href="{{ url_for('cafes.cafe_list', category='both') }}" 
+                       class="btn {{ 'btn-primary' if category == 'both' else 'btn-outline-primary' }}">Both</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Cafe Grid -->
+    {% if cafes.items %}
+        <div class="row">
+            {% for cafe in cafes.items %}
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 cafe-card">
+                    {% if cafe.image_url %}
+                    <img src="{{ url_for('static', filename='uploads/cafes/' + cafe.image_url) }}" 
+                         class="card-img-top" alt="{{ cafe.name }}" style="height: 200px; object-fit: cover;">
+                    {% else %}
+                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                        <i class="fas fa-store fa-3x text-muted"></i>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="card-body">
+                        <h5 class="card-title">{{ cafe.name }}</h5>
+                        <p class="card-text text-muted">
+                            <i class="fas fa-map-marker-alt me-1"></i>{{ cafe.address }}
+                        </p>
+                        
+                        <!-- Rating and Reviews -->
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="text-warning me-2">
+                                {% for i in range(5) %}
+                                    {% if i < cafe.average_rating() %}
+                                        <i class="fas fa-star"></i>
+                                    {% else %}
+                                        <i class="far fa-star"></i>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            <small class="text-muted">({{ cafe.review_count() }} reviews)</small>
+                        </div>
+                        
+                        <!-- Category and Price -->
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="badge bg-secondary">{{ cafe.category.title() }}</span>
+                            {% if cafe.price_range %}
+                            <span class="text-success fw-bold">{{ cafe.price_range }}</span>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Debug info (remove later) -->
+                        {% if current_user.is_authenticated %}
+                        <small class="text-muted">Owner ID: {{ cafe.user_id or 'None' }} | Your ID: {{ current_user.id }}</small>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="card-footer bg-white">
+                        <div class="d-flex gap-2">
+                            <a href="{{ url_for('cafes.cafe_detail', cafe_id=cafe.id) }}" class="btn btn-primary flex-grow-1">
+                                <i class="fas fa-info-circle me-2"></i>View Details
+                            </a>
+                            {% if current_user.is_authenticated and current_user.id == cafe.user_id %}
+                            <a href="{{ url_for('cafes.edit_cafe', cafe_id=cafe.id) }}" class="btn btn-warning" title="Edit Cafe">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <button class="btn btn-danger" onclick="deleteCafe({{ cafe.id }})" title="Delete Cafe">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Pagination -->
+        {% if cafes.pages > 1 %}
+        <div class="d-flex justify-content-center mt-4">
+            <nav>
+                <ul class="pagination">
+                    {% if cafes.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('cafes.cafe_list', page=cafes.prev_num, category=category) }}">Previous</a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page_num in cafes.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != cafes.page %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('cafes.cafe_list', page=page_num, category=category) }}">{{ page_num }}</a>
+                            </li>
+                            {% else %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if cafes.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('cafes.cafe_list', page=cafes.next_num, category=category) }}">Next</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-store fa-3x text-muted mb-3"></i>
+            <h4 class="text-muted">No cafes found</h4>
+            <p class="text-muted">Be the first to add a cafe to the community!</p>
+            <a href="{{ url_for('cafes.add_cafe') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Add New Cafe
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.cafe-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+</style>
+
+<script>
+function deleteCafe(cafeId) {
+    if (confirm('Are you sure you want to delete this cafe? This action cannot be undone.')) {
+        // Get CSRF token
+        const csrfToken = document.querySelector('meta[name=csrf-token]') ? 
+                         document.querySelector('meta[name=csrf-token]').getAttribute('content') : '';
+        
+        fetch(`/cafes/delete/${cafeId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+        })
+        .then(response => {
+            console.log('Response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Response data:', data);
+            if (data.success) {
+                alert('Cafe deleted successfully!');
+                location.reload();
+            } else {
+                alert('Error deleting cafe: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while deleting the cafe: ' + error.message);
+        });
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}Post by {{ post.author.full_name }} - Brewnara{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <!-- Back Button -->
+            <div class="mb-3">
+                <a href="javascript:history.back()" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back
+                </a>
+            </div>
+            
+            <!-- Post Detail Card -->
+            <div class="card mb-4">
+                <!-- Post Header -->
+                <div class="card-header bg-white border-0">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <img src="{{ url_for('static', filename='uploads/avatars/' + post.author.profile_image) if post.author.profile_image not in ['default-avatar.png', 'default-avatar.svg'] else url_for('static', filename='images/default-avatar.svg') }}" 
+                                 alt="{{ post.author.full_name }}" class="rounded-circle me-3" style="width: 50px; height: 50px; object-fit: cover;">
+                            <div>
+                                <h6 class="mb-0 fw-bold">
+                                    <a href="{{ url_for('users.profile', username=post.author.username) }}" class="text-decoration-none text-dark">
+                                        {{ post.author.full_name }}
+                                    </a>
+                                </h6>
+                                <small class="text-muted">
+                                    @{{ post.author.username }} • {{ format_timestamp(post.timestamp) }}
+                                    {% if post.location %}
+                                        • <i class="fas fa-map-marker-alt"></i> {{ post.location }}
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-ellipsis-h"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                {% if post.author == current_user %}
+                                <li><a class="dropdown-item edit-post-btn" href="{{ url_for('posts.edit', post_id=post.id) }}">
+                                    <i class="fas fa-edit me-2"></i>Edit Post
+                                </a></li>
+                                <li><a class="dropdown-item delete-post-btn text-danger" href="#" data-post-id="{{ post.id }}">
+                                    <i class="fas fa-trash me-2"></i>Delete Post
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                {% endif %}
+                                <li><a class="dropdown-item save-post-btn" href="#" data-post-id="{{ post.id }}">
+                                    <i class="fas fa-bookmark me-2"></i>
+                                    {% if current_user.has_saved_post(post) %}Unsave{% else %}Save{% endif %}
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- Mood and Brew Type -->
+                    {% if post.mood or post.brew_type %}
+                    <div class="mt-3">
+                        {% if post.mood %}
+                            <span class="badge bg-light text-dark me-2">
+                                <i class="fas fa-smile me-1"></i>{{ post.mood|title }}
+                            </span>
+                        {% endif %}
+                        {% if post.brew_type %}
+                            <span class="badge bg-light text-dark">
+                                <i class="fas fa-coffee me-1"></i>{{ post.brew_type|replace('_', ' ')|title }}
+                            </span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Post Content -->
+                <div class="card-body">
+                    <p class="card-text fs-5">{{ post.content }}</p>
+                    
+                    {% if post.image_url %}
+                    <div class="post-image-container mb-3">
+                        <img src="{{ url_for('static', filename='uploads/posts/' + post.image_url) }}" 
+                             alt="Post Image" class="img-fluid rounded post-image">
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Post Actions -->
+                <div class="card-footer bg-white border-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex gap-3">
+                            <button class="btn btn-sm btn-outline-danger like-btn" data-post-id="{{ post.id }}">
+                                <i class="fas fa-heart {% if post.is_liked_by(current_user) %}text-danger{% endif %}"></i>
+                                <span class="likes-count">{{ post.likes_count }}</span>
+                            </button>
+                            <span class="text-muted">
+                                <i class="fas fa-comment"></i>
+                                {{ post.comments_count }} comment{{ 's' if post.comments_count != 1 else '' }}
+                            </span>
+                        </div>
+                        <small class="text-muted">
+                            Posted on {{ post.timestamp.strftime('%B %d, %Y at %I:%M %p') }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Comments Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-comments me-2"></i>Comments
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <!-- Add Comment Form -->
+                    <form method="POST" action="{{ url_for('posts.add_comment', post_id=post.id) }}" class="mb-4">
+                        {{ form.hidden_tag() }}
+                        <div class="d-flex align-items-start">
+                            <img src="{{ url_for('static', filename='uploads/avatars/' + current_user.profile_image) if current_user.profile_image not in ['default-avatar.png', 'default-avatar.svg'] else url_for('static', filename='images/default-avatar.svg') }}" 
+                                 alt="Your Avatar" class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;">
+                            <div class="flex-grow-1">
+                                {{ form.content(class="form-control mb-2", placeholder="Add a comment...") }}
+                                <div class="d-flex justify-content-end">
+                                    {{ form.submit(class="btn btn-primary btn-sm") }}
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                    
+                    <!-- Comments List -->
+                    {% if comments %}
+                        {% for comment in comments %}
+                        <div class="comment mb-3 pb-3 border-bottom">
+                            <div class="d-flex align-items-start">
+                                <img src="{{ url_for('static', filename='uploads/avatars/' + comment.author.profile_image) if comment.author.profile_image not in ['default-avatar.png', 'default-avatar.svg'] else url_for('static', filename='images/default-avatar.svg') }}" 
+                                     alt="{{ comment.author.full_name }}" class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center justify-content-between mb-1">
+                                        <div class="d-flex align-items-center">
+                                            <h6 class="mb-0 me-2">
+                                                <a href="{{ url_for('users.profile', username=comment.author.username) }}" class="text-decoration-none text-dark">
+                                                    {{ comment.author.full_name }}
+                                                </a>
+                                            </h6>
+                                            <small class="text-muted">@{{ comment.author.username }}</small>
+                                            <small class="text-muted ms-2">{{ format_timestamp(comment.timestamp) }}</small>
+                                        </div>
+                                        {% if comment.author == current_user %}
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">
+                                                <i class="fas fa-ellipsis-h"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                <li><a class="dropdown-item edit-comment-btn" href="#" data-comment-id="{{ comment.id }}">
+                                                    <i class="fas fa-edit me-2"></i>Edit
+                                                </a></li>
+                                                <li><a class="dropdown-item delete-comment-btn text-danger" href="#" data-comment-id="{{ comment.id }}">
+                                                    <i class="fas fa-trash me-2"></i>Delete
+                                                </a></li>
+                                            </ul>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    <p class="mb-0 comment-content" id="comment-content-{{ comment.id }}">{{ comment.content }}</p>
+                                    <!-- Edit form (hidden by default) -->
+                                    <div class="edit-comment-form d-none" id="edit-form-{{ comment.id }}">
+                                        <textarea class="form-control mb-2" id="edit-content-{{ comment.id }}">{{ comment.content }}</textarea>
+                                        <div class="d-flex gap-2">
+                                            <button class="btn btn-primary btn-sm save-comment-btn" data-comment-id="{{ comment.id }}">Save</button>
+                                            <button class="btn btn-secondary btn-sm cancel-edit-btn" data-comment-id="{{ comment.id }}">Cancel</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-comment fa-2x text-muted mb-3"></i>
+                            <p class="text-muted">No comments yet. Be the first to comment!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,471 @@
+{% extends "base.html" %}
+
+{% block title %}Home Feed - Brewnara{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <!-- Main Feed -->
+        <div class="col-lg-8">
+            <div class="feed-container">
+                <!-- Create Post Button -->
+                <div class="card mb-4 create-post-card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <img src="{{ url_for('static', filename='uploads/avatars/' + current_user.profile_image) if current_user.profile_image and current_user.profile_image not in ['default-avatar.png', 'default-avatar.svg'] else url_for('static', filename='images/default-avatar.svg') }}" 
+                                 alt="Your Avatar" class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;" onerror="this.src='{{ url_for('static', filename='images/default-avatar.svg') }}'">
+                            <a href="{{ url_for('posts.create') }}" class="btn btn-outline-secondary flex-grow-1 text-start">
+                                What's brewing, {{ current_user.first_name }}?
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Posts Feed -->
+                {% if posts.items %}
+                    {% for post in posts.items %}
+                        <div class="card mb-4 post-card">
+                            <!-- Post Header -->
+                            <div class="card-header bg-white border-0">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <img src="{{ url_for('static', filename='uploads/avatars/' + post.author.profile_image) if post.author.profile_image and post.author.profile_image not in ['default-avatar.png', 'default-avatar.svg'] else url_for('static', filename='images/default-avatar.svg') }}" 
+                                             alt="{{ post.author.full_name }}" class="rounded-circle me-3" style="width: 50px; height: 50px; object-fit: cover;" onerror="this.src='{{ url_for('static', filename='images/default-avatar.svg') }}'">
+                                        <div>
+                                            <h6 class="mb-0 fw-bold">
+                                                <a href="{{ url_for('users.profile', username=post.author.username) }}" class="text-decoration-none text-dark">
+                                                    {{ post.author.full_name }}
+                                                </a>
+                                            </h6>
+                                            <small class="text-muted">
+                                                @{{ post.author.username }} • {{ format_timestamp(post.timestamp) }}
+                                                {% if post.location %}
+                                                    • <i class="fas fa-map-marker-alt"></i> {{ post.location }}
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                            <i class="fas fa-ellipsis-h"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            {% if post.author == current_user %}
+                                            <li><a class="dropdown-item edit-post-btn" href="{{ url_for('posts.edit_post', post_id=post.id) }}">
+                                                <i class="fas fa-edit me-2"></i>Edit Post
+                                            </a></li>
+                                            <li><a class="dropdown-item delete-post-btn text-danger" href="#" data-post-id="{{ post.id }}">
+                                                <i class="fas fa-trash me-2"></i>Delete Post
+                                            </a></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            {% endif %}
+                                            <li><a class="dropdown-item save-post-btn" href="#" data-post-id="{{ post.id }}">
+                                                <i class="fas fa-bookmark me-2"></i>
+                                                {% if current_user.has_saved_post(post) %}Unsave{% else %}Save{% endif %}
+                                            </a></li>
+                                            <li><a class="dropdown-item" href="{{ url_for('posts.detail', post_id=post.id) }}">
+                                                <i class="fas fa-external-link-alt me-2"></i>View Post
+                                            </a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                
+                                <!-- Mood and Brew Type -->
+                                {% if post.mood or post.brew_type %}
+                                <div class="mt-2">
+                                    {% if post.mood %}
+                                        <span class="badge bg-light text-dark me-2">
+                                            <i class="fas fa-smile me-1"></i>{{ post.mood|title }}
+                                        </span>
+                                    {% endif %}
+                                    {% if post.brew_type %}
+                                        <span class="badge bg-light text-dark">
+                                            <i class="fas fa-coffee me-1"></i>{{ post.brew_type|replace('_', ' ')|title }}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Post Content -->
+                            <div class="card-body">
+                                <p class="card-text">{{ post.content }}</p>
+                                
+                                {% if post.image_url %}
+                                <div class="post-image-container">
+                                    <img src="{{ url_for('static', filename='uploads/posts/' + post.image_url) }}" 
+                                         alt="Post Image" class="img-fluid rounded post-image">
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Mood Reactions -->
+                                {% include 'components/mood_reactions.html' %}
+                            </div>
+                            
+                            <!-- Post Actions -->
+                            <div class="card-footer bg-white border-0">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="d-flex gap-3">
+                                        <button class="btn btn-sm btn-outline-danger like-btn" data-post-id="{{ post.id }}">
+                                            <i class="fas fa-heart {% if post.is_liked_by(current_user) %}text-danger{% endif %}"></i>
+                                            <span class="likes-count">{{ post.likes_count }}</span>
+                                        </button>
+                                        <a href="{{ url_for('posts.detail', post_id=post.id) }}" class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-comment"></i>
+                                            {{ post.comments_count }}
+                                        </a>
+                                    </div>
+                                    <small class="text-muted">
+                                        <a href="{{ url_for('posts.detail', post_id=post.id) }}" class="text-decoration-none text-muted">
+                                            View details
+                                        </a>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                    
+                    <!-- Pagination -->
+                    {% if posts.pages > 1 %}
+                    <nav aria-label="Posts pagination">
+                        <ul class="pagination justify-content-center">
+                            {% if posts.has_prev %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('main.feed', page=posts.prev_num) }}">Previous</a>
+                                </li>
+                            {% endif %}
+                            
+                            {% for page_num in posts.iter_pages() %}
+                                {% if page_num %}
+                                    {% if page_num != posts.page %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ url_for('main.feed', page=page_num) }}">{{ page_num }}</a>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ page_num }}</span>
+                                        </li>
+                                    {% endif %}
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">...</span>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if posts.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('main.feed', page=posts.next_num) }}">Next</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                {% else %}
+                    <div class="card">
+                        <div class="card-body text-center py-5">
+                            <i class="fas fa-coffee fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">Your feed is empty</h5>
+                            <p class="text-muted">Follow some users or create your first post to get started!</p>
+                            <a href="{{ url_for('posts.create') }}" class="btn btn-primary">Create Your First Post</a>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <div class="sidebar-container">
+                <!-- Online Friends Activity Widget -->
+                <div class="card mb-4" id="friends-activity-widget">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="card-title mb-0">
+                            <i class="fas fa-users text-success me-2"></i>Friends Activity
+                        </h6>
+                        <span class="badge bg-success" id="online-count">0</span>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="online-friends-list" class="list-group list-group-flush">
+                            <div class="text-center py-3 text-muted">
+                                <i class="fas fa-spinner fa-spin"></i> Loading...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Coffee Journey Tracker -->
+                {% include 'components/coffee_journey_tracker.html' %}
+                
+                <!-- User Achievements -->
+                {% include 'components/user_achievements.html' %}
+                
+                <!-- Trending Locations -->
+                {% if trending_locations %}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">
+                            <i class="fas fa-fire text-danger me-2"></i>Trending Locations
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        {% for location, count in trending_locations %}
+                        <div class="trending-item">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <i class="fas fa-map-marker-alt text-warning me-2"></i>
+                                    <strong>{{ location.location }}</strong>
+                                </div>
+                                <small class="text-muted">{{ count }} posts</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Suggested Users -->
+                {% if suggested_users %}
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">
+                            <i class="fas fa-user-plus text-primary me-2"></i>Suggested for You
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        {% for user in suggested_users %}
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <div class="d-flex align-items-center">
+                                <img src="{{ url_for('static', filename='uploads/avatars/' + user.profile_image) if user.profile_image != 'default-avatar.png' else url_for('static', filename='images/default-avatar.svg') }}" 
+                                     alt="{{ user.full_name }}" class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;">
+                                <div>
+                                    <h6 class="mb-0">
+                                        <a href="{{ url_for('users.profile', username=user.username) }}" class="text-decoration-none text-dark">
+                                            {{ user.full_name }}
+                                        </a>
+                                    </h6>
+                                    <small class="text-muted">@{{ user.username }}</small>
+                                </div>
+                            </div>
+                            <button class="btn btn-sm btn-primary follow-btn" data-username="{{ user.username }}">
+                                Follow
+                            </button>
+                        </div>
+                        {% endfor %}
+                        
+                        <div class="text-center">
+                            <a href="{{ url_for('main.discover') }}" class="text-decoration-none">
+                                See more suggestions
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Online Friends Activity System
+let lastFriendsData = [];
+
+function loadOnlineFriends() {
+    fetch('/api/online-friends')
+        .then(response => response.json())
+        .then(data => {
+            if (data.friends) {
+                updateFriendsDisplay(data.friends);
+                checkForNewOnlineFriends(data.friends);
+                lastFriendsData = data.friends;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading online friends:', error);
+        });
+}
+
+function updateFriendsDisplay(friends) {
+    const friendsList = document.getElementById('online-friends-list');
+    const onlineCount = document.getElementById('online-count');
+    
+    onlineCount.textContent = friends.length;
+    
+    if (friends.length === 0) {
+        friendsList.innerHTML = `
+            <div class="text-center py-3 text-muted">
+                <i class="fas fa-user-clock"></i><br>
+                <small>No friends online right now</small>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    friends.forEach(friend => {
+        const statusIcon = getStatusIcon(friend.status);
+        const timeAgo = getTimeAgo(friend.last_seen);
+        
+        html += `
+            <div class="list-group-item list-group-item-action d-flex align-items-center">
+                <div class="position-relative me-3">
+                    <img src="${friend.profile_image_url}" 
+                         alt="${friend.full_name}" 
+                         class="rounded-circle" 
+                         style="width: 40px; height: 40px; object-fit: cover;"
+                         onerror="this.src='/static/images/default-avatar.svg'">
+                    <span class="position-absolute bottom-0 end-0 translate-middle-y bg-white rounded-circle p-1">
+                        ${statusIcon}
+                    </span>
+                </div>
+                <div class="flex-grow-1">
+                    <h6 class="mb-0">${friend.full_name}</h6>
+                    <small class="text-muted">@${friend.username} • ${timeAgo}</small>
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-ellipsis-h"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="/profile/${friend.username}">
+                            <i class="fas fa-user me-2"></i>View Profile
+                        </a></li>
+                        <li><a class="dropdown-item" href="/messages/conversation/${friend.id}">
+                            <i class="fas fa-comment me-2"></i>Send Message
+                        </a></li>
+                    </ul>
+                </div>
+            </div>
+        `;
+    });
+    
+    friendsList.innerHTML = html;
+}
+
+function getStatusIcon(status) {
+    switch(status) {
+        case 'online':
+            return '<i class="fas fa-circle text-success" style="font-size: 12px;" title="Online"></i>';
+        case 'idle':
+            return '<i class="fas fa-circle text-warning" style="font-size: 12px;" title="Idle"></i>';
+        case 'away':
+            return '<i class="fas fa-circle text-secondary" style="font-size: 12px;" title="Away"></i>';
+        default:
+            return '<i class="fas fa-circle text-muted" style="font-size: 12px;" title="Offline"></i>';
+    }
+}
+
+function getTimeAgo(timestamp) {
+    if (!timestamp) return 'unknown';
+    
+    const now = new Date();
+    const time = new Date(timestamp);
+    const diffInMinutes = Math.floor((now - time) / (1000 * 60));
+    
+    if (diffInMinutes < 1) return 'now';
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
+    return `${Math.floor(diffInMinutes / 1440)}d ago`;
+}
+
+function checkForNewOnlineFriends(currentFriends) {
+    const currentIds = new Set(currentFriends.map(f => f.id));
+    const lastIds = new Set(lastFriendsData.map(f => f.id));
+    
+    // Find newly online friends
+    const newOnlineFriends = currentFriends.filter(friend => 
+        !lastIds.has(friend.id) && friend.status === 'online'
+    );
+    
+    // Show popup notification for new online friends
+    newOnlineFriends.forEach(friend => {
+        showFriendOnlineNotification(friend);
+    });
+}
+
+function showFriendOnlineNotification(friend) {
+    // Create popup notification
+    const notification = document.createElement('div');
+    notification.className = 'toast position-fixed top-0 end-0 m-3';
+    notification.style.zIndex = '9999';
+    notification.innerHTML = `
+        <div class="toast-header bg-success text-white">
+            <i class="fas fa-user-check me-2"></i>
+            <strong class="me-auto">Friend Online</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body d-flex align-items-center">
+            <img src="${friend.profile_image_url}" 
+                 alt="${friend.full_name}" 
+                 class="rounded-circle me-3" 
+                 style="width: 40px; height: 40px; object-fit: cover;"
+                 onerror="this.src='/static/images/default-avatar.svg'">
+            <div>
+                <strong>${friend.full_name}</strong><br>
+                <small class="text-muted">@${friend.username} is now online</small>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Initialize and show toast
+    const toast = new bootstrap.Toast(notification, {
+        autohide: true,
+        delay: 5000
+    });
+    toast.show();
+    
+    // Remove from DOM after hiding
+    notification.addEventListener('hidden.bs.toast', function() {
+        notification.remove();
+    });
+    
+    // Play a subtle notification sound (optional)
+    playNotificationSound();
+}
+
+function playNotificationSound() {
+    // Create a subtle notification sound
+    try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = 800;
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.1);
+        gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.3);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.3);
+    } catch (e) {
+        // Audio context may not be available
+        console.log('Audio notification not available');
+    }
+}
+
+// Initialize and set up refresh intervals
+document.addEventListener('DOMContentLoaded', function() {
+    // Load initial data
+    loadOnlineFriends();
+    
+    // Refresh every 30 seconds
+    setInterval(loadOnlineFriends, 30000);
+    
+    // Also refresh when user becomes active (tab focus)
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) {
+            loadOnlineFriends();
+        }
+    });
+});
+</script>
+{% endblock %}

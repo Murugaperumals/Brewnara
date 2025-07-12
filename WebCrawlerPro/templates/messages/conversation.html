@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card conversation-card">
+                <div class="card-header conversation-header d-flex align-items-center">
+                    <a href="{{ url_for('messages.conversations') }}" class="btn btn-outline-secondary btn-sm me-3">
+                        <i class="fas fa-arrow-left"></i>
+                    </a>
+                    <div class="position-relative me-3">
+                        <img src="{{ url_for('static', filename='uploads/avatars/' + partner.profile_image) if partner.profile_image not in ['default-avatar.png', 'default-avatar.svg'] else url_for('static', filename='images/default-avatar.svg') }}" 
+                             alt="{{ partner.full_name }}" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
+                        {% set icon_class, icon_color, status_text = partner.get_status_icon() %}
+                        <span class="position-absolute bottom-0 end-0 status-indicator {{ status_text }}" 
+                              style="background: {{ icon_color }}; color: white; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; font-size: 7px;"
+                              title="{{ status_text.title() }}">
+                            <i class="{{ icon_class }}" style="font-size: 7px;"></i>
+                        </span>
+                    </div>
+                    <div>
+                        <h5 class="mb-0">{{ partner.full_name }}</h5>
+                        <small class="text-muted">
+                            {% if partner.is_online() %}
+                                <i class="fas fa-leaf text-success me-1"></i>Online
+                            {% elif partner.is_idle() %}
+                                <i class="fas fa-coffee text-primary me-1"></i>Idle
+                            {% elif partner.is_away() %}
+                                <i class="fas fa-mug-hot me-1" style="color: #8B4513;"></i>Away
+                            {% else %}
+                                <i class="fas fa-circle text-muted me-1"></i>Offline
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+                
+                <!-- Messages Area -->
+                <div class="card-body messages-container" id="messages-container" style="height: 500px; overflow-y: auto;">
+                    <div class="text-center mb-3">
+                        <small class="text-muted">Chat with {{ partner.full_name }}</small>
+                    </div>
+                    {% for message in messages %}
+                    <div class="message-bubble mb-3 d-flex {{ 'justify-content-end' if message.sender_id == current_user.id else 'justify-content-start' }}" data-message-id="{{ message.id }}">
+                        <div class="message-bubble {{ 'sent' if message.sender_id == current_user.id else 'received' }}" 
+                             style="max-width: 70%; padding: 10px 15px; border-radius: 18px; 
+                                    {{ 'background-color: #007bff; color: white;' if message.sender_id == current_user.id else 'background-color: #f1f3f4; color: #333;' }}">
+                            <div>{{ message.content }}</div>
+                            <small class="text-muted" style="font-size: 0.75rem; {{ 'color: rgba(255,255,255,0.7) !important;' if message.sender_id == current_user.id else '' }}">
+                                {{ format_timestamp(message.timestamp) }}
+                            </small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Message Input -->
+                <div class="card-footer">
+                    <form method="POST" action="{{ url_for('messages.send_message', user_id=partner.id) }}">
+                        {{ form.hidden_tag() }}
+                        <div class="input-group">
+                            {{ form.content(class="form-control message-input", placeholder="Type your message...", rows="1") }}
+                            <button type="submit" class="btn btn-primary send-button">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                        {% if form.content.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.content.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Enhanced Chat Functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const messagesContainer = document.getElementById('messages-container');
+    const messageForm = document.querySelector('form');
+    const textarea = document.querySelector('textarea[name="content"]');
+    const sendButton = document.querySelector('.send-button');
+    
+    // Auto-scroll to bottom of messages
+    function scrollToBottom() {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+    scrollToBottom();
+    
+    // Auto-resize textarea
+    if (textarea) {
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+            
+            // Enable/disable send button based on content
+            const hasContent = this.value.trim().length > 0;
+            sendButton.disabled = !hasContent;
+            sendButton.style.opacity = hasContent ? '1' : '0.6';
+        });
+        
+        // Send message on Enter (but not Shift+Enter)
+        textarea.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if (this.value.trim().length > 0) {
+                    messageForm.submit();
+                }
+            }
+        });
+        
+        // Initial button state
+        sendButton.disabled = true;
+        sendButton.style.opacity = '0.6';
+    }
+    
+    // Add message animation
+    const messages = document.querySelectorAll('.message-bubble');
+    messages.forEach((message, index) => {
+        message.style.animation = `fadeInMessage 0.3s ease-in ${index * 0.1}s both`;
+    });
+    
+    // Auto-refresh messages and status every 15 seconds
+    setInterval(function() {
+        // Only refresh if user hasn't typed anything recently
+        if (textarea && textarea.value.trim() === '') {
+            fetch(window.location.href)
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const newMessages = doc.querySelector('#messages-container').innerHTML;
+                    const currentMessages = messagesContainer.innerHTML;
+                    
+                    if (newMessages !== currentMessages) {
+                        messagesContainer.innerHTML = newMessages;
+                        scrollToBottom();
+                        showNotification('New message received!', 'success');
+                    }
+                    
+                    // Update status indicator
+                    const newStatus = doc.querySelector('.status-indicator');
+                    const currentStatus = document.querySelector('.status-indicator');
+                    if (newStatus && currentStatus) {
+                        currentStatus.outerHTML = newStatus.outerHTML;
+                    }
+                    
+                    // Update status text
+                    const newStatusText = doc.querySelector('.conversation-header small');
+                    const currentStatusText = document.querySelector('.conversation-header small');
+                    if (newStatusText && currentStatusText) {
+                        currentStatusText.innerHTML = newStatusText.innerHTML;
+                    }
+                })
+                .catch(console.error);
+        }
+    }, 15000);
+});
+
+// Show notification function
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}

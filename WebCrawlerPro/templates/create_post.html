@@ -1,0 +1,318 @@
+{% extends "base.html" %}
+
+{% block title %}Create Post - Brewnara{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">
+                        <i class="fas fa-plus-square text-primary me-2"></i>Share Your Coffee Moment
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data" id="postForm">
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- User Info -->
+                        <div class="d-flex align-items-center mb-4">
+                            <img src="{{ url_for('static', filename='uploads/avatars/' + current_user.profile_image) if current_user.profile_image not in ['default-avatar.png', 'default-avatar.svg'] else url_for('static', filename='images/default-avatar.svg') }}" 
+                                 alt="Your Avatar" class="rounded-circle me-3" style="width: 50px; height: 50px; object-fit: cover;">
+                            <div>
+                                <h6 class="mb-0">{{ current_user.full_name }}</h6>
+                                <small class="text-muted">@{{ current_user.username }}</small>
+                            </div>
+                        </div>
+                        
+                        <!-- Content -->
+                        <div class="mb-3">
+                            {{ form.content.label(class="form-label") }}
+                            {{ form.content(class="form-control" + (" is-invalid" if form.content.errors else ""), rows="4") }}
+                            {% if form.content.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.content.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Share what's on your mind about your coffee or tea experience!</div>
+                        </div>
+                        
+                        <!-- Image Upload -->
+                        <div class="mb-3">
+                            {{ form.image.label(class="form-label") }}
+                            {{ form.image(class="form-control" + (" is-invalid" if form.image.errors else ""), accept="image/*") }}
+                            {% if form.image.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.image.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Upload a photo of your coffee, tea, or cafe experience (optional)</div>
+                        </div>
+                        
+                        <!-- Image Preview -->
+                        <div id="imagePreview" class="mb-3" style="display: none;">
+                            <img id="previewImg" src="" alt="Preview" class="img-fluid rounded" style="max-height: 300px;">
+                            <div class="mt-2">
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeImage()">
+                                    <i class="fas fa-times me-1"></i>Remove Image
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Location and Details -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.location.label(class="form-label") }}
+                                <div class="input-group">
+                                    {{ form.location(class="form-control" + (" is-invalid" if form.location.errors else ""), id="locationInput") }}
+                                    <button type="button" class="btn btn-outline-primary" id="detectLocationBtn" onclick="detectLocation()">
+                                        <i class="fas fa-map-marker-alt me-1"></i>Detect
+                                    </button>
+                                </div>
+                                {% if form.location.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.location.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <div class="form-text">Where are you enjoying this moment?</div>
+                                <div id="locationStatus" class="form-text text-info" style="display: none;"></div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                {{ form.brew_type.label(class="form-label") }}
+                                {{ form.brew_type(class="form-select" + (" is-invalid" if form.brew_type.errors else "")) }}
+                                {% if form.brew_type.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.brew_type.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            {{ form.mood.label(class="form-label") }}
+                            {{ form.mood(class="form-select" + (" is-invalid" if form.mood.errors else "")) }}
+                            {% if form.mood.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.mood.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">How are you feeling right now?</div>
+                        </div>
+                        
+                        <!-- Form Actions -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('main.feed') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Online Friends Sidebar -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-users text-success me-2"></i>Friends Online
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div id="onlineFriends">
+                        <!-- Online friends will be loaded here -->
+                        <div class="text-center text-muted py-3">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p class="mb-0 mt-2">Loading online friends...</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Map Access -->
+                    <div class="mt-3 pt-3 border-top">
+                        <h6 class="text-muted mb-2">Quick Map Access</h6>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-primary btn-sm" onclick="openGoogleMaps()">
+                                <i class="fab fa-google me-2"></i>Google Maps
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="openAppleMaps()">
+                                <i class="fas fa-map me-2"></i>Apple Maps
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/location-service.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const imageInput = document.getElementById('image');
+    const imagePreview = document.getElementById('imagePreview');
+    const previewImg = document.getElementById('previewImg');
+    
+    imageInput.addEventListener('change', function(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                imagePreview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+});
+
+function removeImage() {
+    const imageInput = document.getElementById('image');
+    const imagePreview = document.getElementById('imagePreview');
+    
+    imageInput.value = '';
+    imagePreview.style.display = 'none';
+}
+
+async function detectLocation() {
+    const locationInput = document.getElementById('locationInput');
+    const locationStatus = document.getElementById('locationStatus');
+    const detectBtn = document.getElementById('detectLocationBtn');
+    
+    if (!navigator.geolocation) {
+        locationStatus.textContent = 'Geolocation is not supported by this browser.';
+        locationStatus.style.display = 'block';
+        return;
+    }
+    
+    // Show loading state
+    detectBtn.disabled = true;
+    detectBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Detecting...';
+    locationStatus.textContent = 'Getting your location...';
+    locationStatus.style.display = 'block';
+    
+    try {
+        const position = await new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 300000
+            });
+        });
+
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        
+        // Use our improved location service
+        const address = await reverseGeocode(lat, lng);
+        locationInput.value = address;
+        locationStatus.textContent = 'Location detected successfully!';
+        locationStatus.className = 'form-text text-success';
+        
+    } catch (error) {
+        let errorMessage = 'Unable to retrieve your location.';
+        if (error.code) {
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    errorMessage = 'Location access denied by user.';
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    errorMessage = 'Location information is unavailable.';
+                    break;
+                case error.TIMEOUT:
+                    errorMessage = 'Location request timed out.';
+                    break;
+            }
+        }
+        
+        locationStatus.textContent = errorMessage;
+        locationStatus.className = 'form-text text-danger';
+    } finally {
+        detectBtn.disabled = false;
+        detectBtn.innerHTML = '<i class="fas fa-map-marker-alt me-1"></i>Detect';
+        setTimeout(() => {
+            locationStatus.style.display = 'none';
+        }, 3000);
+    }
+}
+
+// Load online friends
+function loadOnlineFriends() {
+    const onlineFriendsContainer = document.getElementById('onlineFriends');
+    
+    // Load actual online friends from API
+    fetch('/users/online-friends')
+        .then(response => response.json())
+        .then(data => {
+            const onlineFriends = data.friends || [];
+            
+            if (onlineFriends.length === 0) {
+            onlineFriendsContainer.innerHTML = `
+                <div class="text-center text-muted py-3">
+                    <i class="fas fa-users"></i>
+                    <p class="mb-0 mt-2">No friends online</p>
+                </div>
+            `;
+        } else {
+            onlineFriendsContainer.innerHTML = onlineFriends.map(friend => `
+                <div class="d-flex align-items-center mb-3">
+                    <div class="position-relative">
+                        <img src="/static/${friend.avatar}" alt="${friend.name}" 
+                             class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;">
+                        <span class="position-absolute bottom-0 end-0 badge rounded-pill bg-success" 
+                              style="width: 12px; height: 12px; margin-bottom: 8px; margin-right: 8px;"></span>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="mb-0">${friend.name}</h6>
+                        <small class="text-muted">${friend.status}</small>
+                    </div>
+                </div>
+            `).join('');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading online friends:', error);
+            onlineFriendsContainer.innerHTML = `
+                <div class="text-center text-muted py-3">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p class="mb-0 mt-2">Unable to load friends</p>
+                </div>
+            `;
+        });
+}
+
+// Map functions
+function openGoogleMaps() {
+    const locationInput = document.getElementById('locationInput');
+    const location = locationInput.value || 'coffee shops near me';
+    const googleMapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(location)}`;
+    window.open(googleMapsUrl, '_blank');
+}
+
+function openAppleMaps() {
+    const locationInput = document.getElementById('locationInput');
+    const location = locationInput.value || 'coffee shops near me';
+    const appleMapsUrl = `https://maps.apple.com/?q=${encodeURIComponent(location)}`;
+    window.open(appleMapsUrl, '_blank');
+}
+
+// Initialize online friends when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    loadOnlineFriends();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,92 @@
+<!-- Coffee & Tea Mood Reactions Component -->
+<div class="mood-reactions-container mt-3" data-post-id="{{ post.id }}">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <small class="text-muted">How does this make you feel?</small>
+        <div class="reaction-buttons d-flex gap-1">
+            <button class="btn btn-sm btn-outline-secondary reaction-btn" 
+                    data-reaction="coffee_love" 
+                    title="Coffee Love">
+                ☕ <span class="count">0</span>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary reaction-btn" 
+                    data-reaction="tea_time" 
+                    title="Tea Time">
+                🍵 <span class="count">0</span>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary reaction-btn" 
+                    data-reaction="energized" 
+                    title="Energized">
+                ⚡ <span class="count">0</span>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary reaction-btn" 
+                    data-reaction="relaxed" 
+                    title="Relaxed">
+                😌 <span class="count">0</span>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary reaction-btn" 
+                    data-reaction="cozy" 
+                    title="Cozy">
+                🏠 <span class="count">0</span>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary reaction-btn" 
+                    data-reaction="social" 
+                    title="Social">
+                👥 <span class="count">0</span>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary reaction-btn" 
+                    data-reaction="contemplative" 
+                    title="Contemplative">
+                🤔 <span class="count">0</span>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary reaction-btn" 
+                    data-reaction="happy" 
+                    title="Happy">
+                😊 <span class="count">0</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+.mood-reactions-container {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-radius: 12px;
+    padding: 15px;
+    border: 1px solid #dee2e6;
+}
+
+.reaction-btn {
+    border-radius: 20px;
+    transition: all 0.3s ease;
+    font-size: 0.85rem;
+    min-width: 50px;
+    border: 2px solid #dee2e6;
+    background: white;
+}
+
+.reaction-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.reaction-btn.active {
+    background: linear-gradient(135deg, #6f4e37, #8B4513);
+    color: white;
+    border-color: #6f4e37;
+    transform: scale(1.1);
+}
+
+.reaction-btn .count {
+    font-weight: bold;
+}
+
+@keyframes reaction-pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+.reaction-btn.animate {
+    animation: reaction-pulse 0.5s ease;
+}
+</style>

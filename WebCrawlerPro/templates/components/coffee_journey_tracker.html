@@ -1,0 +1,129 @@
+<!-- Personalized Coffee Journey Progress Tracker -->
+<div class="coffee-journey-tracker card mb-4">
+    <div class="card-header bg-gradient-primary text-white">
+        <h6 class="card-title mb-0">
+            <i class="fas fa-chart-line me-2"></i>
+            Your Coffee Journey
+        </h6>
+    </div>
+    <div class="card-body">
+        <div class="journey-stats row g-3">
+            <!-- Posts Count -->
+            <div class="col-6 col-md-3">
+                <div class="stat-item text-center">
+                    <div class="stat-icon">
+                        <i class="fas fa-pencil-alt fa-2x text-primary"></i>
+                    </div>
+                    <div class="stat-number h4 mb-0 mt-2">{{ current_user.posts.count() }}</div>
+                    <div class="stat-label small text-muted">Posts Shared</div>
+                </div>
+            </div>
+            
+            <!-- Followers Count -->
+            <div class="col-6 col-md-3">
+                <div class="stat-item text-center">
+                    <div class="stat-icon">
+                        <i class="fas fa-users fa-2x text-success"></i>
+                    </div>
+                    <div class="stat-number h4 mb-0 mt-2">{{ current_user.followers.count() }}</div>
+                    <div class="stat-label small text-muted">Followers</div>
+                </div>
+            </div>
+            
+            <!-- Cafe Reviews -->
+            <div class="col-6 col-md-3">
+                <div class="stat-item text-center">
+                    <div class="stat-icon">
+                        <i class="fas fa-star fa-2x text-warning"></i>
+                    </div>
+                    <div class="stat-number h4 mb-0 mt-2">0</div>
+                    <div class="stat-label small text-muted">Cafe Reviews</div>
+                </div>
+            </div>
+            
+            <!-- Days Active -->
+            <div class="col-6 col-md-3">
+                <div class="stat-item text-center">
+                    <div class="stat-icon">
+                        <i class="fas fa-user-friends fa-2x text-info"></i>
+                    </div>
+                    <div class="stat-number h4 mb-0 mt-2">{{ current_user.followed.count() }}</div>
+                    <div class="stat-label small text-muted">Following</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Progress Bars -->
+        <div class="journey-progress mt-4">
+            <div class="progress-item mb-3">
+                <div class="d-flex justify-content-between mb-1">
+                    <small class="text-muted">Social Butterfly Progress</small>
+                    <small class="text-muted">{{ current_user.followers.count() }}/10</small>
+                </div>
+                <div class="progress" style="height: 6px;">
+                    <div class="progress-bar bg-success" 
+                         style="width: {{ (current_user.followers.count() / 10 * 100) | round }}%"></div>
+                </div>
+            </div>
+            
+            <div class="progress-item mb-3">
+                <div class="d-flex justify-content-between mb-1">
+                    <small class="text-muted">Coffee Explorer Progress</small>
+                    <small class="text-muted">0/5</small>
+                </div>
+                <div class="progress" style="height: 6px;">
+                    <div class="progress-bar bg-warning" 
+                         style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="journey-actions mt-4">
+            <div class="row g-2">
+                <div class="col-6">
+                    <a href="{{ url_for('posts.create') }}" class="btn btn-primary btn-sm w-100">
+                        <i class="fas fa-plus me-1"></i>Share Post
+                    </a>
+                </div>
+                <div class="col-6">
+                    <a href="{{ url_for('cafes.add_cafe') }}" class="btn btn-outline-primary btn-sm w-100">
+                        <i class="fas fa-store me-1"></i>Add Cafe
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #8B4513, #D2691E);
+}
+
+.stat-item {
+    padding: 15px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.stat-item:hover {
+    background: #f8f9fa;
+    transform: translateY(-2px);
+}
+
+.stat-number {
+    font-weight: 700;
+    color: #333;
+}
+
+.progress {
+    border-radius: 10px;
+    background: #e9ecef;
+}
+
+.progress-bar {
+    border-radius: 10px;
+    transition: width 0.6s ease;
+}
+</style>

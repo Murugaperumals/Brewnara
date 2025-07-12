@@ -1,0 +1,426 @@
+/* Real-time Notifications and Messaging Styles */
+
+/* Notification Bell */
+.notification-bell {
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.notification-bell:hover {
+    transform: scale(1.1);
+    color: var(--coffee-primary) !important;
+}
+
+.notification-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #dc3545;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    min-width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+    }
+}
+
+/* Notification Dropdown */
+.notification-dropdown {
+    width: 350px;
+    max-height: 400px;
+    overflow-y: auto;
+    border: none;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+}
+
+.notification-dropdown .dropdown-header {
+    background: linear-gradient(135deg, #8B4513, #D2691E);
+    color: white;
+    padding: 15px 20px;
+    border-radius: 12px 12px 0 0;
+    font-weight: 600;
+}
+
+.notifications-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.notification-item {
+    padding: 15px 20px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.notification-item:hover {
+    background-color: #f8f9fa;
+}
+
+.notification-item.unread {
+    background-color: #fff3cd;
+    border-left: 4px solid #8B4513;
+}
+
+.notification-item.unread .unread-indicator {
+    position: absolute;
+    top: 50%;
+    right: 15px;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 8px;
+    background: #8B4513;
+    border-radius: 50%;
+}
+
+.notification-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+    font-size: 1.2rem;
+}
+
+.notification-content h6 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+}
+
+.notification-message {
+    font-size: 0.8rem;
+    color: #666;
+    line-height: 1.4;
+}
+
+.notification-time {
+    font-size: 0.7rem;
+    color: #999;
+}
+
+/* Toast Notifications */
+.toast-container {
+    z-index: 9999;
+}
+
+.notification-toast {
+    min-width: 300px;
+    border: none;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.notification-toast .toast-header {
+    border-bottom: none;
+    padding: 12px 15px;
+    font-weight: 600;
+}
+
+.notification-toast .toast-body {
+    padding: 15px;
+    background: white;
+}
+
+/* Mood Reactions */
+.mood-reactions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.mood-reaction-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    background: white;
+    color: #666;
+    font-size: 0.8rem;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.mood-reaction-btn:hover {
+    background: #f8f9fa;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.mood-reaction-btn.reacted {
+    background: #8B4513;
+    color: white;
+    border-color: #8B4513;
+}
+
+.mood-reaction-btn .reaction-emoji {
+    font-size: 1rem;
+}
+
+.mood-reaction-btn .reaction-count {
+    font-weight: 600;
+    font-size: 0.75rem;
+}
+
+.reaction-animate {
+    animation: reactionBounce 0.3s ease;
+}
+
+@keyframes reactionBounce {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+}
+
+/* Achievement Badges */
+.achievement-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin: 2px;
+}
+
+.achievement-badge.gold {
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    color: #8B4513;
+}
+
+.achievement-badge.silver {
+    background: linear-gradient(135deg, #C0C0C0, #A0A0A0);
+    color: #333;
+}
+
+.achievement-badge.bronze {
+    background: linear-gradient(135deg, #CD7F32, #B8860B);
+    color: white;
+}
+
+.achievement-badge.special {
+    background: linear-gradient(135deg, #8B4513, #D2691E);
+    color: white;
+}
+
+/* Real-time Chat Enhancements */
+.chat-message-group {
+    margin-bottom: 15px;
+}
+
+.chat-message-group.own {
+    text-align: right;
+}
+
+.chat-message-bubble {
+    position: relative;
+    max-width: 70%;
+    padding: 12px 16px;
+    border-radius: 18px;
+    margin-bottom: 4px;
+    animation: messageSlideIn 0.3s ease;
+}
+
+.chat-message-group.own .chat-message-bubble {
+    background: linear-gradient(135deg, #8B4513, #D2691E);
+    color: white;
+    margin-left: auto;
+    border-bottom-right-radius: 4px;
+}
+
+.chat-message-group.other .chat-message-bubble {
+    background: #f1f3f4;
+    color: #333;
+    border-bottom-left-radius: 4px;
+}
+
+@keyframes messageSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.message-time {
+    font-size: 0.7rem;
+    color: #999;
+    margin-top: 4px;
+}
+
+.message-status {
+    font-size: 0.7rem;
+    color: #999;
+    margin-top: 2px;
+}
+
+.message-status.read {
+    color: #8B4513;
+}
+
+/* Typing Indicator */
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    color: #666;
+    font-style: italic;
+    animation: fadeInOut 1.5s infinite;
+}
+
+@keyframes fadeInOut {
+    0%, 100% {
+        opacity: 0.5;
+    }
+    50% {
+        opacity: 1;
+    }
+}
+
+.typing-dots {
+    display: flex;
+    gap: 2px;
+}
+
+.typing-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #999;
+    animation: typingDots 1.4s infinite ease-in-out;
+}
+
+.typing-dot:nth-child(1) {
+    animation-delay: -0.32s;
+}
+
+.typing-dot:nth-child(2) {
+    animation-delay: -0.16s;
+}
+
+@keyframes typingDots {
+    0%, 80%, 100% {
+        transform: scale(0);
+    }
+    40% {
+        transform: scale(1);
+    }
+}
+
+/* Online Status in Chat */
+.user-online-status {
+    position: relative;
+    display: inline-block;
+}
+
+.user-online-status .status-indicator {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 12px;
+    height: 12px;
+    border: 2px solid white;
+    border-radius: 50%;
+    background: #28a745;
+}
+
+.user-online-status .status-indicator.idle {
+    background: #17a2b8;
+}
+
+.user-online-status .status-indicator.away {
+    background: #8B4513;
+}
+
+.user-online-status .status-indicator.offline {
+    background: #6c757d;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .notification-dropdown {
+        width: 300px;
+    }
+    
+    .mood-reactions {
+        gap: 6px;
+    }
+    
+    .mood-reaction-btn {
+        padding: 4px 8px;
+        font-size: 0.75rem;
+    }
+    
+    .chat-message-bubble {
+        max-width: 85%;
+        padding: 10px 14px;
+    }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    .notification-item {
+        background-color: #2d3748;
+        color: white;
+        border-bottom-color: #4a5568;
+    }
+    
+    .notification-item:hover {
+        background-color: #4a5568;
+    }
+    
+    .notification-item.unread {
+        background-color: #553c1e;
+    }
+    
+    .mood-reaction-btn {
+        background: #2d3748;
+        color: #e2e8f0;
+        border-color: #4a5568;
+    }
+    
+    .mood-reaction-btn:hover {
+        background: #4a5568;
+    }
+    
+    .chat-message-group.other .chat-message-bubble {
+        background: #2d3748;
+        color: #e2e8f0;
+    }
+}

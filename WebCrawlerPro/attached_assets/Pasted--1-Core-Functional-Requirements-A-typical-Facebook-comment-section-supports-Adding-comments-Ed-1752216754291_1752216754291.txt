@@ -1,0 +1,212 @@
+📌 1. Core Functional Requirements
+A typical Facebook comment section supports:
+
+Adding comments
+
+Editing and deleting your own comments
+
+Replying to comments (nested comments)
+
+Liking/reacting to comments
+
+Loading new comments in real time
+
+Handling spam and moderation
+
+Notifications for replies or mentions
+
+📌 2. Front-End Behavior
+✅ Comment Input
+
+Each post has a comment input field.
+
+Supports rich text (emoji, mentions @User).
+
+Sends input via AJAX/fetch to the server.
+
+✅ Nested Comments
+
+Comments are often displayed as a tree:
+
+Parent comment → Child replies → Replies to replies.
+
+Typically built with recursive components (e.g., React components).
+
+✅ UI Interactions
+
+Edit, delete, like, reply buttons for each comment.
+
+Likes/reactions update counts immediately (optimistic UI).
+
+✅ Real-Time Updates
+
+Uses WebSockets or long polling.
+
+If another user replies or likes, your UI updates instantly.
+
+✅ Pagination & Lazy Loading
+
+Loads only a few comments initially.
+
+Load More button fetches additional comments when needed.
+
+Infinite scroll for replies in deeply nested threads.
+
+📌 3. Back-End Architecture
+✅ Database Design
+A basic schema for comments:
+
+sql
+Copy
+Edit
+Table: Comments
+------------------------------
+id             BIGINT (PK)
+post_id        BIGINT (FK to Posts)
+parent_id      BIGINT (nullable FK to Comments.id)
+author_id      BIGINT (FK to Users)
+content        TEXT
+created_at     TIMESTAMP
+updated_at     TIMESTAMP
+likes_count    INT
+deleted        BOOLEAN (soft delete)
+parent_id enables nesting: top-level comments have NULL, replies store the parent comment’s ID.
+
+Soft delete allows recovering a comment or showing “This comment was deleted.”
+
+✅ Storing Reactions
+Separate reactions table:
+
+sql
+Copy
+Edit
+Table: CommentReactions
+------------------------------
+id             BIGINT (PK)
+comment_id     BIGINT (FK to Comments)
+user_id        BIGINT (FK to Users)
+reaction_type  ENUM('like', 'love', 'haha', 'angry', ...)
+created_at     TIMESTAMP
+This supports multiple reaction types, not just “like”.
+
+✅ Mentions & Notifications
+
+Parse @username mentions server-side.
+
+Store mentions in a CommentMentions table.
+
+Create notification jobs to alert mentioned users.
+
+✅ Moderation
+
+Content flagged by users goes into a review queue.
+
+Spam detection (keyword filters, machine learning).
+
+✅ APIs
+Typical RESTful or GraphQL endpoints:
+
+POST /comments — Add comment
+
+GET /comments?post_id=... — Fetch comments with pagination
+
+PATCH /comments/:id — Edit comment
+
+DELETE /comments/:id — Soft delete
+
+POST /comments/:id/reactions — Add/remove reaction
+
+📌 4. Real-Time Functionality
+✅ How comments update live:
+
+When you post a comment:
+
+Client sends it via API.
+
+Server saves it and broadcasts a new event via WebSockets (using Socket.IO, Pusher, or a pub/sub system like Redis or Kafka).
+
+All connected clients listening to that post ID receive the new comment event.
+
+✅ Notifications
+
+Similarly, a notification service broadcasts to user-specific channels when they’re mentioned or receive a reply.
+
+📌 5. Performance Optimizations
+✅ Caching
+
+Frequently accessed comments are cached (e.g., Redis).
+
+Use fan-out strategies for popular posts: write once, serve to many readers.
+
+✅ Denormalization
+
+Store likes_count directly on the comment row to avoid expensive count queries.
+
+✅ Rate Limiting
+
+Prevent spammy rapid posting or mass reactions.
+
+✅ Sharding & Scaling
+
+Comments for a post may be partitioned across multiple database shards for huge posts.
+
+📌 6. Tech Stack Examples
+✅ Front-end:
+
+React/Vue for recursive comment trees
+
+GraphQL or REST APIs
+
+WebSocket library (Socket.IO)
+
+✅ Back-end:
+
+Node.js / Python / Java / Go
+
+Relational DB (PostgreSQL, MySQL)
+
+Redis for caching and pub/sub
+
+Kafka or similar for large-scale pub/sub events
+
+✅ Security
+
+CSRF and XSS protection (sanitize user input!)
+
+Auth & permissions: only allow edits/deletes by owner
+
+⚡ Putting It All Together
+When you write a comment:
+
+Front-end sends comment to the API.
+
+API validates, stores, updates post’s comment count.
+
+Server pushes a WebSocket event to subscribers.
+
+All active users see the comment appear instantly.
+
+If someone mentions you, you get a notification.
+
+When you like a comment:
+
+Client sends like request.
+
+Server records it in CommentReactions.
+
+Increments likes_count for fast reads.
+
+Broadcasts update to all viewers.
+
+✅ Summary: Facebook Comments Are...
+A mix of:
+
+Relational structure (tree for nesting)
+
+Real-time updates (WebSockets/pub-sub)
+
+User-friendly features (mentions, reactions)
+
+Robust moderation & notifications
+
+Scalable & performant (caching, sharding, fan-out)

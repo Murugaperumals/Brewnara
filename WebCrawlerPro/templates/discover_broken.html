@@ -1,0 +1,736 @@
+{% extends "base.html" %}
+
+{% block title %}Discover - Brewnara{% endblock %}
+
+{% block head %}
+<!-- Multiple Map Provider Support -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+<link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dq1sOr6sVq8Xw8&libraries=places"></script>
+
+<script>
+let currentMapProvider = 'google';
+let map;
+let mapboxMap;
+let leafletMap;
+let userLocation = null;
+let friendMarkers = [];
+let cafeMarkers = [];
+let showFriends = true;
+let showCafes = true;
+
+function initMap() {
+    console.log('Initializing map system...');
+    
+    // Check if Google Maps API is loaded
+    if (typeof google === 'undefined') {
+        console.error('Google Maps API not loaded');
+        setTimeout(initMap, 1000); // Retry after 1 second
+        return;
+    }
+    
+    console.log('Getting your real location...');
+    
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+            const userLat = position.coords.latitude;
+            const userLng = position.coords.longitude;
+            
+            console.log('Location found:', userLat, userLng);
+            userLocation = { lat: userLat, lng: userLng };
+            
+            // Initialize with default provider (Google Maps)
+            initializeMapProvider(currentMapProvider, userLat, userLng);
+            
+        }, function(error) {
+            console.error('Geolocation error:', error);
+            // Fallback to a default location (San Francisco)
+            const defaultLat = 37.7749;
+            const defaultLng = -122.4194;
+            userLocation = { lat: defaultLat, lng: defaultLng };
+            
+            initializeMapProvider(currentMapProvider, defaultLat, defaultLng);
+        });
+    } else {
+        console.error('Geolocation not supported');
+        // Fallback initialization
+        const defaultLat = 37.7749;
+        const defaultLng = -122.4194;
+        userLocation = { lat: defaultLat, lng: defaultLng };
+        
+        initializeMapProvider(currentMapProvider, defaultLat, defaultLng);
+    }
+}
+
+// Marker functions for different providers
+function addGoogleUserMarker(lat, lng) {
+    const userMarker = new google.maps.Marker({
+        position: { lat: lat, lng: lng },
+        map: map,
+        title: 'Your Location',
+        icon: {
+            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="20" cy="20" r="18" fill="#007bff" stroke="white" stroke-width="4"/>
+                    <text x="20" y="26" text-anchor="middle" fill="white" font-size="16" font-family="Arial">📍</text>
+                </svg>
+            `),
+            scaledSize: new google.maps.Size(40, 40),
+            anchor: new google.maps.Point(20, 20)
+        }
+    });
+    
+    const userInfoWindow = new google.maps.InfoWindow({
+        content: '<div><strong>📍 Your Location</strong><br><small>Current position</small></div>'
+    });
+    
+    userMarker.addListener('click', () => {
+        userInfoWindow.open(map, userMarker);
+    });
+}
+
+function addLeafletUserMarker(lat, lng) {
+    const userIcon = L.divIcon({
+        html: `<div style="background: #007bff; color: white; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border: 4px solid white; box-shadow: 0 4px 12px rgba(0,123,255,0.4);">
+            📍
+        </div>`,
+        className: 'user-marker',
+        iconSize: [40, 40],
+        iconAnchor: [20, 20]
+    });
+    
+    L.marker([lat, lng], {icon: userIcon})
+        .addTo(leafletMap)
+        .bindPopup('<div><strong>📍 Your Location</strong><br><small>Current position</small></div>');
+}
+
+function addMapboxUserMarker(lat, lng) {
+    const el = document.createElement('div');
+    el.innerHTML = '📍';
+    el.style.background = '#007bff';
+    el.style.color = 'white';
+    el.style.borderRadius = '50%';
+    el.style.width = '40px';
+    el.style.height = '40px';
+    el.style.display = 'flex';
+    el.style.alignItems = 'center';
+    el.style.justifyContent = 'center';
+    el.style.border = '4px solid white';
+    el.style.boxShadow = '0 4px 12px rgba(0,123,255,0.4)';
+    el.style.cursor = 'pointer';
+    
+    new mapboxgl.Marker(el)
+        .setLngLat([lng, lat])
+        .setPopup(new mapboxgl.Popup().setHTML('<div><strong>📍 Your Location</strong><br><small>Current position</small></div>'))
+        .addTo(mapboxMap);
+}
+            
+            // Load nearby coffee shops using Google Places
+            const service = new google.maps.places.PlacesService(map);
+            const request = {
+                location: { lat: userLat, lng: userLng },
+                radius: 2000,
+                type: ['cafe', 'restaurant'],
+                keyword: 'coffee tea'
+            };
+            
+            service.nearbySearch(request, (results, status) => {
+                if (status === google.maps.places.PlacesServiceStatus.OK) {
+                    console.log('Found', results.length, 'nearby places');
+                    
+                    for (let i = 0; i < Math.min(results.length, 20); i++) {
+                        const place = results[i];
+                        
+                        const cafeMarker = new google.maps.Marker({
+                            position: place.geometry.location,
+                            map: showCafes ? map : null,
+                            title: place.name,
+                            icon: {
+                                url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                                    <svg width="35" height="35" viewBox="0 0 35 35" xmlns="http://www.w3.org/2000/svg">
+                                        <circle cx="17.5" cy="17.5" r="15" fill="#8B4513" stroke="white" stroke-width="3"/>
+                                        <text x="17.5" y="23" text-anchor="middle" fill="white" font-size="14">☕</text>
+                                    </svg>
+                                `),
+                                scaledSize: new google.maps.Size(35, 35),
+                                anchor: new google.maps.Point(17.5, 17.5)
+                            }
+                        });
+                        
+                        const rating = place.rating ? '★'.repeat(Math.floor(place.rating)) + '☆'.repeat(5-Math.floor(place.rating)) : 'No ratings';
+                        const priceLevel = place.price_level ? '$'.repeat(place.price_level) : 'Price not available';
+                        
+                        const infoWindow = new google.maps.InfoWindow({
+                            content: `
+                                <div style="max-width: 250px;">
+                                    <strong>☕ ${place.name}</strong><br>
+                                    <small>📍 ${place.vicinity}</small><br>
+                                    <small>💰 ${priceLevel}</small><br>
+                                    <div style="color: #ffa500; margin: 5px 0;">${rating}</div>
+                                    <button onclick="getDirections(${place.geometry.location.lat()}, ${place.geometry.location.lng()}, '${place.name}')" 
+                                            style="background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin-top: 5px;">
+                                        📍 Get Directions
+                                    </button>
+                                </div>
+                            `
+                        });
+                        
+                        cafeMarker.addListener('click', () => {
+                            infoWindow.open(map, cafeMarker);
+                        });
+                        
+                        cafeMarkers.push(cafeMarker);
+                    }
+                }
+            });
+            
+            // Load online friends (simulated for demonstration)
+            loadOnlineFriends(map, userLat, userLng);
+            
+        }, function(error) {
+            console.error('Geolocation error:', error);
+            // Fallback to a default location (San Francisco)
+            const defaultLat = 37.7749;
+            const defaultLng = -122.4194;
+            userLocation = { lat: defaultLat, lng: defaultLng };
+            
+            initializeMapProvider(currentMapProvider, defaultLat, defaultLng);
+        });
+    } else {
+        console.error('Geolocation not supported');
+        // Fallback initialization
+        const defaultLat = 37.7749;
+        const defaultLng = -122.4194;
+        userLocation = { lat: defaultLat, lng: defaultLng };
+        
+        initializeMapProvider(currentMapProvider, defaultLat, defaultLng);
+    }
+}
+
+function initializeMapProvider(provider, lat, lng) {
+    // Clear existing maps
+    clearAllMaps();
+    
+    currentMapProvider = provider;
+    
+    switch(provider) {
+        case 'google':
+            initGoogleMap(lat, lng);
+            break;
+        case 'openstreetmap':
+            initOpenStreetMap(lat, lng);
+            break;
+        case 'mapbox':
+            initMapboxMap(lat, lng);
+            break;
+        case 'apple':
+            initAppleMaps(lat, lng);
+            break;
+        default:
+            initGoogleMap(lat, lng);
+    }
+}
+
+function clearAllMaps() {
+    // Clear Google Map
+    if (map) {
+        // Clear existing markers
+        friendMarkers.forEach(marker => {
+            if (marker.setMap) marker.setMap(null);
+        });
+        cafeMarkers.forEach(marker => {
+            if (marker.setMap) marker.setMap(null);
+        });
+    }
+    
+    // Clear Leaflet Map
+    if (leafletMap) {
+        leafletMap.remove();
+        leafletMap = null;
+    }
+    
+    // Clear Mapbox Map
+    if (mapboxMap) {
+        mapboxMap.remove();
+        mapboxMap = null;
+    }
+    
+    friendMarkers = [];
+    cafeMarkers = [];
+}
+
+function initGoogleMap(lat, lng) {
+    map = new google.maps.Map(document.getElementById('map'), {
+        center: { lat: lat, lng: lng },
+        zoom: 14,
+        styles: [
+            {
+                featureType: 'poi',
+                elementType: 'labels',
+                stylers: [{ visibility: 'off' }]
+            }
+        ]
+    });
+    
+    addGoogleUserMarker(lat, lng);
+    loadGooglePlaces(lat, lng);
+    loadGoogleFriends(lat, lng);
+}
+
+function initOpenStreetMap(lat, lng) {
+    leafletMap = L.map('map').setView([lat, lng], 14);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(leafletMap);
+    
+    addLeafletUserMarker(lat, lng);
+    loadLeafletPlaces(lat, lng);
+    loadLeafletFriends(lat, lng);
+}
+
+function initMapboxMap(lat, lng) {
+    mapboxgl.accessToken = 'pk.eyJ1IjoiYnJld25hcmEiLCJhIjoiY2x3eHl6MXAwMDFrYTJpbzg2YXNkZXJ0cyJ9.demo_token';
+    
+    mapboxMap = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/mapbox/streets-v12',
+        center: [lng, lat],
+        zoom: 14
+    });
+    
+    mapboxMap.on('load', function() {
+        addMapboxUserMarker(lat, lng);
+        loadMapboxPlaces(lat, lng);
+        loadMapboxFriends(lat, lng);
+    });
+}
+
+function initAppleMaps(lat, lng) {
+    // For Apple Maps, we'll use a custom implementation with Leaflet styled like Apple Maps
+    leafletMap = L.map('map').setView([lat, lng], 14);
+    
+    // Use CartoDB Positron tiles for Apple Maps-like appearance
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 20
+    }).addTo(leafletMap);
+    
+    addLeafletUserMarker(lat, lng);
+    loadLeafletPlaces(lat, lng);
+    loadLeafletFriends(lat, lng);
+}
+
+let friendMarkers = [];
+let cafeMarkers = [];
+let showFriends = true;
+let showCafes = true;
+
+function loadOnlineFriends(map, userLat, userLng) {
+    // Load friends from your database
+    fetch('/api/online-friends')
+        .then(response => response.json())
+        .then(data => {
+            console.log('Online friends found:', data.friends?.length || 0);
+            
+            if (data.friends) {
+                data.friends.forEach(friend => {
+                    // Place friends randomly around user's location (within 5km radius)
+                    const lat = userLat + (Math.random() - 0.5) * 0.05;
+                    const lng = userLng + (Math.random() - 0.5) * 0.05;
+                    
+                    const friendMarker = new google.maps.Marker({
+                        position: { lat: lat, lng: lng },
+                        map: showFriends ? map : null,
+                        title: friend.full_name,
+                        icon: {
+                            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                                <svg width="35" height="35" viewBox="0 0 35 35" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="17.5" cy="17.5" r="15" fill="#28a745" stroke="white" stroke-width="3"/>
+                                    <text x="17.5" y="23" text-anchor="middle" fill="white" font-size="14">🌿</text>
+                                </svg>
+                            `),
+                            scaledSize: new google.maps.Size(35, 35),
+                            anchor: new google.maps.Point(17.5, 17.5)
+                        }
+                    });
+                    
+                    const infoWindow = new google.maps.InfoWindow({
+                        content: `
+                            <div style="max-width: 250px;">
+                                <strong>🌿 ${friend.full_name}</strong><br>
+                                <small>@${friend.username}</small><br>
+                                <span style="color: #28a745;">🟢 Online</span><br>
+                                <button onclick="getDirections(${lat}, ${lng}, '${friend.full_name}')" 
+                                        style="background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin: 5px 5px 0 0;">
+                                    📍 Get Directions
+                                </button>
+                                <a href="/profile/${friend.username}" 
+                                   style="background: #007bff; color: white; text-decoration: none; padding: 5px 10px; border-radius: 5px; display: inline-block;">
+                                    👤 Profile
+                                </a>
+                            </div>
+                        `
+                    });
+                    
+                    friendMarker.addListener('click', () => {
+                        infoWindow.open(map, friendMarker);
+                    });
+                    
+                    friendMarkers.push(friendMarker);
+                });
+            }
+        })
+        .catch(error => console.error('Error loading friends:', error));
+}
+
+function getDirections(destLat, destLng, destName) {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+            const userLat = position.coords.latitude;
+            const userLng = position.coords.longitude;
+            
+            // Open directions in device's map app
+            const url = `https://www.google.com/maps/dir/${userLat},${userLng}/${destLat},${destLng}`;
+            window.open(url, '_blank');
+        }, function() {
+            // If location access denied, just open destination
+            const url = `https://www.google.com/maps/search/?api=1&query=${destLat},${destLng}`;
+            window.open(url, '_blank');
+        });
+    } else {
+        // If geolocation not supported, just open destination
+        const url = `https://www.google.com/maps/search/?api=1&query=${destLat},${destLng}`;
+        window.open(url, '_blank');
+    }
+}
+
+// Toggle functions
+function toggleFriends() {
+    showFriends = !showFriends;
+    const statusBadge = document.getElementById('friends-status');
+    const toggleDiv = document.getElementById('toggle-friends');
+    
+    if (showFriends) {
+        friendMarkers.forEach(marker => marker.setMap(map));
+        statusBadge.textContent = 'Show';
+        statusBadge.className = 'badge bg-success';
+        toggleDiv.style.backgroundColor = '#d4edda';
+    } else {
+        friendMarkers.forEach(marker => marker.setMap(null));
+        statusBadge.textContent = 'Hide';
+        statusBadge.className = 'badge bg-secondary';
+        toggleDiv.style.backgroundColor = '#f8f9fa';
+    }
+}
+
+function toggleCafes() {
+    showCafes = !showCafes;
+    const statusBadge = document.getElementById('cafes-status');
+    const toggleDiv = document.getElementById('toggle-cafes');
+    
+    if (showCafes) {
+        showMarkersForProvider(cafeMarkers, currentMapProvider);
+        statusBadge.textContent = 'Show';
+        statusBadge.className = 'badge bg-success';
+        toggleDiv.style.backgroundColor = '#fff3cd';
+    } else {
+        hideMarkersForProvider(cafeMarkers, currentMapProvider);
+        statusBadge.textContent = 'Hide';
+        statusBadge.className = 'badge bg-secondary';
+        toggleDiv.style.backgroundColor = '#f8f9fa';
+    }
+}
+
+function switchMapProvider(provider) {
+    console.log('Switching to provider:', provider);
+    
+    // Update dropdown text
+    const providerNames = {
+        'google': 'Google Maps',
+        'openstreetmap': 'OpenStreetMap', 
+        'mapbox': 'Mapbox',
+        'apple': 'Apple Maps Style'
+    };
+    
+    document.getElementById('current-provider-text').textContent = providerNames[provider];
+    
+    // Reinitialize map with new provider
+    if (userLocation) {
+        initializeMapProvider(provider, userLocation.lat, userLocation.lng);
+    }
+}
+
+function showMarkersForProvider(markers, provider) {
+    markers.forEach(marker => {
+        if (provider === 'google' && marker.setMap) {
+            marker.setMap(map);
+        } else if ((provider === 'openstreetmap' || provider === 'apple') && marker.addTo && leafletMap) {
+            marker.addTo(leafletMap);
+        } else if (provider === 'mapbox' && marker.addTo && mapboxMap) {
+            marker.addTo(mapboxMap);
+        }
+    });
+}
+
+function hideMarkersForProvider(markers, provider) {
+    markers.forEach(marker => {
+        if (provider === 'google' && marker.setMap) {
+            marker.setMap(null);
+        } else if ((provider === 'openstreetmap' || provider === 'apple') && marker.remove && leafletMap) {
+            leafletMap.removeLayer(marker);
+        } else if (provider === 'mapbox' && marker.remove && mapboxMap) {
+            marker.remove();
+        }
+    });
+}
+
+// Load functions for different providers
+function loadGooglePlaces(lat, lng) {
+    const service = new google.maps.places.PlacesService(map);
+    const request = {
+        location: { lat: lat, lng: lng },
+        radius: 2000,
+        type: ['cafe', 'restaurant'],
+        keyword: 'coffee tea'
+    };
+    
+    service.nearbySearch(request, (results, status) => {
+        if (status === google.maps.places.PlacesServiceStatus.OK) {
+            results.slice(0, 20).forEach(place => {
+                const marker = new google.maps.Marker({
+                    position: place.geometry.location,
+                    map: showCafes ? map : null,
+                    title: place.name,
+                    icon: {
+                        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                            <svg width="35" height="35" viewBox="0 0 35 35" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="17.5" cy="17.5" r="15" fill="#8B4513" stroke="white" stroke-width="3"/>
+                                <text x="17.5" y="23" text-anchor="middle" fill="white" font-size="14">☕</text>
+                            </svg>
+                        `),
+                        scaledSize: new google.maps.Size(35, 35),
+                        anchor: new google.maps.Point(17.5, 17.5)
+                    }
+                });
+                
+                const infoWindow = new google.maps.InfoWindow({
+                    content: `<div style="max-width: 250px;"><strong>☕ ${place.name}</strong><br><small>📍 ${place.vicinity}</small><br><button onclick="getDirections(${place.geometry.location.lat()}, ${place.geometry.location.lng()}, '${place.name}')" style="background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin-top: 5px;">📍 Get Directions</button></div>`
+                });
+                
+                marker.addListener('click', () => infoWindow.open(map, marker));
+                cafeMarkers.push(marker);
+            });
+        }
+    });
+}
+
+function loadGoogleFriends(lat, lng) {
+    loadOnlineFriends(map, lat, lng);
+}
+
+function loadLeafletPlaces(lat, lng) {
+    // Simulate nearby cafes for Leaflet
+    const simulatedCafes = [
+        {name: 'Coffee Central', lat: lat + 0.01, lng: lng + 0.01},
+        {name: 'Tea Garden', lat: lat - 0.01, lng: lng + 0.01},
+        {name: 'Brew & Bean', lat: lat + 0.01, lng: lng - 0.01}
+    ];
+    
+    simulatedCafes.forEach(cafe => {
+        const cafeIcon = L.divIcon({
+            html: `<div style="background: #8B4513; color: white; border-radius: 50%; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; border: 3px solid white;">☕</div>`,
+            iconSize: [35, 35],
+            iconAnchor: [17.5, 17.5]
+        });
+        
+        const marker = L.marker([cafe.lat, cafe.lng], {icon: cafeIcon})
+            .bindPopup(`<div><strong>☕ ${cafe.name}</strong><br><button onclick="getDirections(${cafe.lat}, ${cafe.lng}, '${cafe.name}')" style="background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin-top: 5px;">📍 Get Directions</button></div>`);
+        
+        if (showCafes) marker.addTo(leafletMap);
+        cafeMarkers.push(marker);
+    });
+}
+
+function loadLeafletFriends(lat, lng) {
+    // Load friends for Leaflet
+    fetch('/api/online-friends')
+        .then(response => response.json())
+        .then(data => {
+            if (data.friends) {
+                data.friends.forEach(friend => {
+                    const friendLat = lat + (Math.random() - 0.5) * 0.05;
+                    const friendLng = lng + (Math.random() - 0.5) * 0.05;
+                    
+                    const friendIcon = L.divIcon({
+                        html: `<div style="background: #28a745; color: white; border-radius: 50%; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; border: 3px solid white;">🌿</div>`,
+                        iconSize: [35, 35],
+                        iconAnchor: [17.5, 17.5]
+                    });
+                    
+                    const marker = L.marker([friendLat, friendLng], {icon: friendIcon})
+                        .bindPopup(`<div><strong>🌿 ${friend.full_name}</strong><br><small>@${friend.username}</small><br><button onclick="getDirections(${friendLat}, ${friendLng}, '${friend.full_name}')" style="background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin: 5px 5px 0 0;">📍 Get Directions</button></div>`);
+                    
+                    if (showFriends) marker.addTo(leafletMap);
+                    friendMarkers.push(marker);
+                });
+            }
+        });
+}
+
+function loadMapboxPlaces(lat, lng) {
+    // Simulate cafes for Mapbox
+    const simulatedCafes = [
+        {name: 'Mapbox Cafe', lat: lat + 0.01, lng: lng + 0.01},
+        {name: 'Vector Coffee', lat: lat - 0.01, lng: lng + 0.01}
+    ];
+    
+    simulatedCafes.forEach(cafe => {
+        const el = document.createElement('div');
+        el.innerHTML = '☕';
+        el.style.background = '#8B4513';
+        el.style.color = 'white';
+        el.style.borderRadius = '50%';
+        el.style.width = '35px';
+        el.style.height = '35px';
+        el.style.display = 'flex';
+        el.style.alignItems = 'center';
+        el.style.justifyContent = 'center';
+        el.style.border = '3px solid white';
+        el.style.cursor = 'pointer';
+        
+        const marker = new mapboxgl.Marker(el)
+            .setLngLat([cafe.lng, cafe.lat])
+            .setPopup(new mapboxgl.Popup().setHTML(`<div><strong>☕ ${cafe.name}</strong><br><button onclick="getDirections(${cafe.lat}, ${cafe.lng}, '${cafe.name}')" style="background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin-top: 5px;">📍 Get Directions</button></div>`));
+        
+        if (showCafes) marker.addTo(mapboxMap);
+        cafeMarkers.push(marker);
+    });
+}
+
+function loadMapboxFriends(lat, lng) {
+    // Similar implementation for Mapbox friends
+}
+</script>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dq1sOr6sVq8Xw8&libraries=places&callback=initMap"></script>
+
+<style>
+#map {
+    height: 400px;
+    width: 100%;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.hover-shadow:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+}
+
+.friend-marker {
+    background: #28a745;
+    color: white;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    border: 2px solid white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+
+.cafe-marker {
+    background: #8B4513;
+    color: white;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    border: 2px solid white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <!-- Map Section -->
+        <div class="col-lg-12 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-map-marked-alt text-primary me-2"></i>Friends & Cafes Map
+                        </h5>
+                        <div class="dropdown">
+                            <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" id="mapProviderDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-globe me-1"></i>
+                                <span id="current-provider-text">Google Maps</span>
+                            </button>
+                            <ul class="dropdown-menu" aria-labelledby="mapProviderDropdown">
+                                <li><a class="dropdown-item" href="#" onclick="switchMapProvider('google')">
+                                    <i class="fab fa-google me-2"></i>Google Maps
+                                </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="switchMapProvider('openstreetmap')">
+                                    <i class="fas fa-map me-2"></i>OpenStreetMap
+                                </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="switchMapProvider('mapbox')">
+                                    <i class="fas fa-layer-group me-2"></i>Mapbox
+                                </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="switchMapProvider('apple')">
+                                    <i class="fab fa-apple me-2"></i>Apple Maps Style
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="map"></div>
+                    <div class="mt-3">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div id="toggle-friends" class="d-flex align-items-center p-3 bg-light rounded cursor-pointer hover-shadow" onclick="toggleFriends()" style="cursor: pointer; transition: all 0.3s ease; background-color: #d4edda;">
+                                    <div class="me-3">
+                                        <div class="friend-marker">
+                                            <i class="fas fa-leaf"></i>
+                                        </div>
+                                    </div>
+                                    <span>Online Friends</span>
+                                    <div class="ms-auto">
+                                        <span id="friends-status" class="badge bg-success">Show</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div id="toggle-cafes" class="d-flex align-items-center p-3 bg-light rounded cursor-pointer hover-shadow" onclick="toggleCafes()" style="cursor: pointer; transition: all 0.3s ease; background-color: #fff3cd;">
+                                    <div class="me-3">
+                                        <div class="cafe-marker">
+                                            <i class="fas fa-coffee"></i>
+                                        </div>
+                                    </div>
+                                    <span>Coffee & Tea Shops</span>
+                                    <div class="ms-auto">
+                                        <span id="cafes-status" class="badge bg-success">Show</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Other content sections here -->
+    </div>
+</div>
+{% endblock %}
